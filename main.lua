@@ -1,8 +1,8 @@
 -- =============================================================================
--- THYREN DECOUPLED REPOSITORY DASHBOARD (CRIMSON VAPORWAVE / BLADE BALL SPECIAL)
+-- THYREN DECOUPLED REPOSITORY DASHBOARD (CRIMSON VAPORWAVE / UNIFIED TOGGLE)
 -- TARGET: Roblox Executor Environment (Ultra-Accurate Asynchronous Spammer)
 -- LAYOUT: Deep Obsidian & Crimson Aesthetics // Smooth Embedded Geometry
--- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping the start button visible
+-- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping the action pod visible
 -- =============================================================================
 
 local uiName = "ThyrenEngineUI"
@@ -32,12 +32,14 @@ if not successCore or not TargetParent then
     TargetParent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
--- 3. SYSTEM STATE CONFIGURATION
+-- 3. GLOBAL UNIFIED SYSTEM STATE CONFIGURATION
 local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
     ModeSelection = "KPS",
     LowEndMode = false,
+    ActivationMode = "Manual Spam", -- Globally enforced toggle mode ("Manual Spam" vs "Hotkey (Z)")
+    RuntimeHotkey = Enum.KeyCode.Z,
     AutoParryActive = false,
     ParryThreshold = 45, 
     SpamKey = Enum.KeyCode.F,
@@ -87,7 +89,16 @@ local function StopLoop()
     EngineState.IsRunning = false
 end
 
--- 5. DEDICATED BLADE BALL TARGET MATCHING ENGINE
+-- Global Controller that checks the unified ActivationMode before running actions
+local function ToggleEngine()
+    if not EngineState.IsRunning then
+        StartLoop()
+    else
+        StopLoop()
+    end
+end
+
+-- 5. DEDICATED BLADE BALL TARGET MATCHING ENGINE WITH SINGLE-HIT DEBOUNCE
 local function FindActiveBall()
     local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
     
@@ -115,7 +126,6 @@ local function FindActiveBall()
     return nil
 end
 
--- TRACKING DEBOUNCE STATE TO PREVENT DOUBLE ENTRANCE HITS
 local LastParriedBall = nil
 
 local function StartParryTracking()
@@ -130,13 +140,11 @@ local function StartParryTracking()
         
         local ball = FindActiveBall()
         if ball then
-            -- Reset lock if a brand new target frame ball switches in
             if LastParriedBall ~= ball then
                 LastParriedBall = ball
                 ball:SetAttribute("HasBeenParriedByMe", false)
             end
             
-            -- Exit out early if this exact ball has already been registered
             if ball:GetAttribute("HasBeenParriedByMe") == true then 
                 return 
             end
@@ -146,7 +154,6 @@ local function StartParryTracking()
             local dynamicTriggerRange = EngineState.ParryThreshold + (ballVelocity * 0.12)
             
             if distance <= dynamicTriggerRange then
-                -- Apply lock immediately before firing to secure single delivery
                 ball:SetAttribute("HasBeenParriedByMe", true)
                 fireInput()
             end
@@ -226,18 +233,19 @@ ModeBtn.ZIndex = 5
 ModeBtn.Parent = ConfigCanvas
 ApplyRadius(ModeBtn, 6)
 
-local GuardBtn = Instance.new("TextButton")
-GuardBtn.Size = UDim2.new(0, 215, 0, 42)
-GuardBtn.Position = UDim2.new(0.5, 15, 0.5, -150)
-GuardBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12)
-GuardBtn.BorderSizePixel = 0
-GuardBtn.Text = "🛡️ Profile: Uncapped"
-GuardBtn.TextColor3 = Color3.fromRGB(255, 210, 220)
-GuardBtn.Font = Enum.Font.SourceSansBold
-GuardBtn.TextSize = 13
-GuardBtn.ZIndex = 5
-GuardBtn.Parent = ConfigCanvas
-ApplyRadius(GuardBtn, 6)
+-- Unified Control Mode Switcher Button (Renamed to Manual Spam)
+local ControlModeBtn = Instance.new("TextButton")
+ControlModeBtn.Size = UDim2.new(0, 215, 0, 42)
+ControlModeBtn.Position = UDim2.new(0.5, 15, 0.5, -150)
+ControlModeBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12)
+ControlModeBtn.BorderSizePixel = 0
+ControlModeBtn.Text = "🕹️ Trigger: Manual Spam"
+ControlModeBtn.TextColor3 = Color3.fromRGB(255, 210, 220)
+ControlModeBtn.Font = Enum.Font.SourceSansBold
+ControlModeBtn.TextSize = 13
+ControlModeBtn.ZIndex = 5
+ControlModeBtn.Parent = ConfigCanvas
+ApplyRadius(ControlModeBtn, 6)
 
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 6)
@@ -417,7 +425,7 @@ local IsDragging = false
 
 local function UpdateSlider(inputObj)
     local fraction = math.clamp((inputObj.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
-    local maxLimit = EngineState.LowEndMode and 200 or 1000
+    local maxLimit = EngineState.LowEndMode and 200 or 2500
     local calculated = math.round(1 + (fraction * (maxLimit - 1)))
     
     EngineState.TargetSpeed = calculated
@@ -459,24 +467,29 @@ local function BindChassisPosition(chassisFrame, elementList)
     end)
 end
 
-BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, GuardBtn, SliderTrack, SpeedDisplay, ParryBtn, DiagPanel})
+BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, ControlModeBtn, SliderTrack, SpeedDisplay, ParryBtn, DiagPanel})
 BindChassisPosition(ControlPod, {ActionButton, StatusBar})
 
--- 6. KEYBOARD VISIBILITY INPUT BIND (RIGHT SHIFT)
+-- 6. KEYBOARD GLOBAL INTERCEPT LISTENER
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
+    if gameProcessed then return end
+    
+    -- Right Shift window presentation visibility management
+    if input.KeyCode == Enum.KeyCode.RightShift then
         EngineState.ConfigVisible = not EngineState.ConfigVisible
         ConfigCanvas.Visible = EngineState.ConfigVisible
     end
+    
+    -- Bound hotkey input evaluation
+    if EngineState.ActivationMode == "Hotkey (Z)" and input.KeyCode == EngineState.RuntimeHotkey then
+        ToggleEngine()
+        UpdateUI()
+    end
 end)
 
--- Mapping Interactive Connections
+-- GUI Execution Intercept
 ActionButton.MouseButton1Click:Connect(function()
-    if not EngineState.IsRunning then
-        StartLoop()
-    else
-        StopLoop()
-    end
+    ToggleEngine()
     UpdateUI()
 end)
 
@@ -486,24 +499,29 @@ ModeBtn.MouseButton1Click:Connect(function()
     UpdateUI()
 end)
 
+-- Switching trigger configuration applies across system settings profiles
+ControlModeBtn.MouseButton1Click:Connect(function()
+    if EngineState.ActivationMode == "Manual Spam" then
+        EngineState.ActivationMode = "Hotkey (Z)"
+        ControlModeBtn.Text = "🕹️ Trigger: Hotkey [Z]"
+    else
+        EngineState.ActivationMode = "Manual Spam"
+        ControlModeBtn.Text = "🕹️ Trigger: Manual Spam"
+    end
+    UpdateUI()
+end)
+
 getgenv().ThyrenLowEndMode = function()
     EngineState.LowEndMode = not EngineState.LowEndMode
-    if EngineState.LowEndMode then
-        GuardBtn.Text = "🛡️ Profile: Low-End"
-        if EngineState.TargetSpeed > 200 then EngineState.TargetSpeed = 200 end
-    else
-        GuardBtn.Text = "🛡️ Profile: Uncapped"
+    if EngineState.LowEndMode and EngineState.TargetSpeed > 200 then 
+        EngineState.TargetSpeed = 200 
     end
-    
-    local maxLimit = EngineState.LowEndMode and 200 or 1000
+    local maxLimit = EngineState.LowEndMode and 200 or 2500
     local scale = math.clamp((EngineState.TargetSpeed - 1) / (maxLimit - 1), 0, 1)
     SliderFill.Size = UDim2.new(scale, 0, 1, 0)
     SliderButton.Position = UDim2.new(scale, -7, 0.5, -7)
-    
     UpdateUI()
 end
-
-GuardBtn.MouseButton1Click:Connect(ThyrenLowEndMode)
 
 ParryBtn.MouseButton1Click:Connect(function()
     EngineState.AutoParryActive = not EngineState.AutoParryActive
