@@ -39,7 +39,7 @@ local EngineState = {
     ModeSelection = "KPS",
     LowEndMode = false,
     AutoParryActive = false,
-    ParryThreshold = 45, -- Default distance calculation buffer
+    ParryThreshold = 45, 
     SpamKey = Enum.KeyCode.F,
     ParryConnection = nil,
     ConfigVisible = true
@@ -63,13 +63,17 @@ end
 
 local function RunSpamThread()
     while EngineState.IsRunning do
-        local delayInterval = 1.0 / EngineState.TargetSpeed
-        fireInput()
-        
-        if delayInterval > 0 then
-            task.wait(delayInterval)
+        if EngineState.TargetSpeed >= 60 then
+            fireInput()
+            RunService.Heartbeat:Wait()
         else
-            task.wait()
+            local delayInterval = 1.0 / EngineState.TargetSpeed
+            fireInput()
+            if delayInterval > 0 then
+                task.wait(delayInterval)
+            else
+                task.wait()
+            end
         end
     end
 end
@@ -85,19 +89,14 @@ end
 
 -- 5. DEDICATED BLADE BALL TARGET MATCHING ENGINE
 local function FindActiveBall()
-    -- Blade Ball explicitly containers all moving balls inside workspace.Balls
     local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
     
     if BallFolder then
         for _, ball in ipairs(BallFolder:GetChildren()) do
-            -- Verify it has real geometry or is mapped as a zoom-target
             if ball:IsA("BasePart") or ball:FindFirstChildOfClass("BasePart") then
                 local realPart = ball:IsA("BasePart") and ball or ball:FindFirstChildOfClass("BasePart")
-                
-                -- Blade Ball tags the current tracked player name inside a 'target' attribute
                 local currentTarget = ball:GetAttribute("target") or ball:GetAttribute("Target")
                 
-                -- Check if the ball is explicitly locked onto you
                 if currentTarget == LocalPlayer.Name then
                     return realPart
                 end
@@ -105,7 +104,6 @@ local function FindActiveBall()
         end
     end
     
-    -- Fallback safety query in case folder systems change mid-round
     for _, obj in ipairs(workspace:GetChildren()) do
         if obj.Name == "Ball" and obj:IsA("BasePart") then
             if obj:GetAttribute("target") == LocalPlayer.Name then
@@ -117,10 +115,12 @@ local function FindActiveBall()
     return nil
 end
 
+-- TRACKING DEBOUNCE STATE TO PREVENT DOUBLE ENTRANCE HITS
+local LastParriedBall = nil
+
 local function StartParryTracking()
     if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
     
-    -- PreSimulation hooks into the physics frame right before translation calculations occur
     EngineState.ParryConnection = RunService.PreSimulation:Connect(function()
         if not EngineState.AutoParryActive then return end
         
@@ -130,16 +130,28 @@ local function StartParryTracking()
         
         local ball = FindActiveBall()
         if ball then
+            -- Reset lock if a brand new target frame ball switches in
+            if LastParriedBall ~= ball then
+                LastParriedBall = ball
+                ball:SetAttribute("HasBeenParriedByMe", false)
+            end
+            
+            -- Exit out early if this exact ball has already been registered
+            if ball:GetAttribute("HasBeenParriedByMe") == true then 
+                return 
+            end
+            
             local distance = (ball.Position - rootPart.Position).Magnitude
             local ballVelocity = ball.AssemblyLinearVelocity.Magnitude
-            
-            -- Dynamic calculation: The faster the ball moves, the sooner it triggers the block
             local dynamicTriggerRange = EngineState.ParryThreshold + (ballVelocity * 0.12)
             
             if distance <= dynamicTriggerRange then
+                -- Apply lock immediately before firing to secure single delivery
+                ball:SetAttribute("HasBeenParriedByMe", true)
                 fireInput()
-                task.wait(0.03) -- Frame safety window to prevent double execution triggers
             end
+        else
+            LastParriedBall = nil
         end
     end)
 end
@@ -149,6 +161,7 @@ local function StopParryTracking()
         EngineState.ParryConnection:Disconnect()
         EngineState.ParryConnection = nil
     end
+    LastParriedBall = nil
 end
 
 -- -----------------------------------------------------------------------------
