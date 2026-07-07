@@ -1,5 +1,5 @@
 -- =============================================================================
--- THYREN DECOUPLED REPOSITORY DASHBOARD (CRIMSON VAPORWAVE / PERSISTENT ACTION)
+-- THYREN DECOUPLED REPOSITORY DASHBOARD (CRIMSON VAPORWAVE / BLADE BALL SPECIAL)
 -- TARGET: Roblox Executor Environment (Ultra-Accurate Asynchronous Spammer)
 -- LAYOUT: Deep Obsidian & Crimson Aesthetics // Smooth Embedded Geometry
 -- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping the start button visible
@@ -39,7 +39,7 @@ local EngineState = {
     ModeSelection = "KPS",
     LowEndMode = false,
     AutoParryActive = false,
-    ParryThreshold = 65, -- Increased slightly for better ping/latency registration
+    ParryThreshold = 45, -- Default distance calculation buffer
     SpamKey = Enum.KeyCode.F,
     ParryConnection = nil,
     ConfigVisible = true
@@ -83,30 +83,34 @@ local function StopLoop()
     EngineState.IsRunning = false
 end
 
--- 5. RE-ENGINEERED DEFENSIVE BALL DETECTION SYSTEM
+-- 5. DEDICATED BLADE BALL TARGET MATCHING ENGINE
 local function FindActiveBall()
-    -- Check common specific folders first where games isolate moving objects
-    local targets = {workspace, workspace:FindFirstChild("Balls"), workspace:FindFirstChild("TrainingBalls")}
+    -- Blade Ball explicitly containers all moving balls inside workspace.Balls
+    local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
     
-    for _, container in ipairs(targets) do
-        if container then
-            for _, obj in ipairs(container:GetChildren()) do
-                -- Pattern match for "Ball" names, attributes, or structural mesh qualities
-                if string.find(string.lower(obj.Name), "ball") or obj:GetAttribute("Ball") or obj:FindFirstChild("WaveVisual") then
-                    if obj:IsA("BasePart") then
-                        return obj
-                    elseif obj:FindFirstChildOfClass("BasePart") then
-                        return obj:FindFirstChildOfClass("BasePart")
-                    end
+    if BallFolder then
+        for _, ball in ipairs(BallFolder:GetChildren()) do
+            -- Verify it has real geometry or is mapped as a zoom-target
+            if ball:IsA("BasePart") or ball:FindFirstChildOfClass("BasePart") then
+                local realPart = ball:IsA("BasePart") and ball or ball:FindFirstChildOfClass("BasePart")
+                
+                -- Blade Ball tags the current tracked player name inside a 'target' attribute
+                local currentTarget = ball:GetAttribute("target") or ball:GetAttribute("Target")
+                
+                -- Check if the ball is explicitly locked onto you
+                if currentTarget == LocalPlayer.Name then
+                    return realPart
                 end
             end
         end
     end
     
-    -- Fallback: Look for moving dynamic parts with high velocities if structural names are masked
+    -- Fallback safety query in case folder systems change mid-round
     for _, obj in ipairs(workspace:GetChildren()) do
-        if obj:IsA("BasePart") and obj.AssemblyLinearVelocity.Magnitude > 50 and obj.Size.X == obj.Size.Y then
-            return obj
+        if obj.Name == "Ball" and obj:IsA("BasePart") then
+            if obj:GetAttribute("target") == LocalPlayer.Name then
+                return obj
+            end
         end
     end
     
@@ -116,6 +120,7 @@ end
 local function StartParryTracking()
     if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
     
+    -- PreSimulation hooks into the physics frame right before translation calculations occur
     EngineState.ParryConnection = RunService.PreSimulation:Connect(function()
         if not EngineState.AutoParryActive then return end
         
@@ -126,18 +131,14 @@ local function StartParryTracking()
         local ball = FindActiveBall()
         if ball then
             local distance = (ball.Position - rootPart.Position).Magnitude
+            local ballVelocity = ball.AssemblyLinearVelocity.Magnitude
             
-            -- Direction vector calculations to ensure it's target locked onto your character position
-            local relativeVelocity = ball.AssemblyLinearVelocity - rootPart.AssemblyLinearVelocity
-            local toCharacter = (rootPart.Position - ball.Position).Unit
-            local isMovingToward = relativeVelocity.Unit:Dot(toCharacter) > 0.3 -- Generous angle allowance
+            -- Dynamic calculation: The faster the ball moves, the sooner it triggers the block
+            local dynamicTriggerRange = EngineState.ParryThreshold + (ballVelocity * 0.12)
             
-            -- Dynamic scaling threshold based on how fast the target is approaching
-            local dynamicThreshold = EngineState.ParryThreshold + (ball.AssemblyLinearVelocity.Magnitude * 0.15)
-            
-            if isMovingToward and distance <= dynamicThreshold then
+            if distance <= dynamicTriggerRange then
                 fireInput()
-                task.wait(0.05) -- Internal parry cool-down filter to prevent execution choking
+                task.wait(0.03) -- Frame safety window to prevent double execution triggers
             end
         end
     end)
@@ -159,7 +160,6 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = TargetParent
 
--- CONDITIONAL CANVAS ELEMENT (Holds items that respond to toggle inputs)
 local ConfigCanvas = Instance.new("Frame")
 ConfigCanvas.Name = "ConfigCanvas"
 ConfigCanvas.Size = UDim2.new(1, 0, 1, 0)
@@ -188,7 +188,6 @@ MainFrame.Draggable = true
 MainFrame.Parent = ConfigCanvas
 ApplyRadius(MainFrame, 10)
 
--- Header Title Label
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(0, 460, 0, 40)
 TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -200)
@@ -201,7 +200,6 @@ TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.ZIndex = 5
 TitleLabel.Parent = ConfigCanvas
 
--- Mode Selection Switcher Button
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Size = UDim2.new(0, 215, 0, 42)
 ModeBtn.Position = UDim2.new(0.5, -230, 0.5, -150)
@@ -215,7 +213,6 @@ ModeBtn.ZIndex = 5
 ModeBtn.Parent = ConfigCanvas
 ApplyRadius(ModeBtn, 6)
 
--- Hardware Low End Performance Guard
 local GuardBtn = Instance.new("TextButton")
 GuardBtn.Size = UDim2.new(0, 215, 0, 42)
 GuardBtn.Position = UDim2.new(0.5, 15, 0.5, -150)
@@ -229,7 +226,6 @@ GuardBtn.ZIndex = 5
 GuardBtn.Parent = ConfigCanvas
 ApplyRadius(GuardBtn, 6)
 
--- INTERACTIVE SLIDER COMPONENT
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 6)
 SliderTrack.Position = UDim2.new(0.5, -230, 0.5, -85)
@@ -257,7 +253,6 @@ SliderButton.ZIndex = 7
 SliderButton.Parent = SliderTrack
 ApplyRadius(SliderButton, 7)
 
--- Numerical KPS Metric Output Display Text Label
 local SpeedDisplay = Instance.new("TextLabel")
 SpeedDisplay.Size = UDim2.new(0, 100, 0, 30)
 SpeedDisplay.Position = UDim2.new(0.5, 130, 0.5, -97)
@@ -270,7 +265,6 @@ SpeedDisplay.TextXAlignment = Enum.TextXAlignment.Right
 SpeedDisplay.ZIndex = 5
 SpeedDisplay.Parent = ConfigCanvas
 
--- AUTO PARRY TOGGLE INTERFACE UTILITY
 local ParryBtn = Instance.new("TextButton")
 ParryBtn.Size = UDim2.new(0, 460, 0, 40)
 ParryBtn.Position = UDim2.new(0.5, -230, 0.5, -55)
@@ -284,9 +278,6 @@ ParryBtn.ZIndex = 5
 ParryBtn.Parent = ConfigCanvas
 ApplyRadius(ParryBtn, 6)
 
--- =============================================================================
--- REPOSITORY VIEW: REPO METRICS DICTIONARY FRAME
--- =============================================================================
 local DiagPanel = Instance.new("Frame")
 DiagPanel.Name = "DiagPanel"
 DiagPanel.Size = UDim2.new(0, 460, 0, 110)
@@ -344,7 +335,6 @@ DiagParryLabel.TextSize = 13
 DiagParryLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagParryLabel.ZIndex = 5
 DiagParryLabel.Parent = DiagPanel
-
 
 -- =============================================================================
 -- PANEL MODULE 2: COMPACT CONTROLLER POD (OUTSIDE THE TOGGLE CANVAS)
