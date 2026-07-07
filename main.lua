@@ -52,10 +52,10 @@ local EngineState = {
     SpamKey = Enum.KeyCode.F,
     ParryConnection = nil,
     ConfigVisible = true,
-    Collapsed = false -- Track compact view state
+    Collapsed = false
 }
 
--- 4. ULTRA-LOW LATENCY UPVALUE LOCALIZATION (ELIMINATES HEAP LOOKUPS)
+-- 4. ULTRA-LOW LATENCY UPVALUE LOCALIZATION
 local sendKeyEvent = VirtualInputManager.SendKeyEvent
 local sendMouseButtonEvent = VirtualInputManager.SendMouseButtonEvent
 local getMouseLocation = UserInputService.GetMouseLocation
@@ -81,7 +81,7 @@ local function RunSpamIteration()
             sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
             sendKeyEvent(VirtualInputManager, true, spamKey, false, game)
             sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
-        } else
+        else
             local mousePos = getMouseLocation(UserInputService)
             local mx, my = mousePos.X, mousePos.Y
             sendMouseButtonEvent(VirtualInputManager, mx, my, 0, true, game, 0)
@@ -190,7 +190,7 @@ local function StopParryTracking()
     end
 end
 
--- 7. INTERFACE ENVIRONMENT ARCHITECTURE (VAPORWAVE PURPLE/PINK RE-THEME)
+-- 7. INTERFACE ENVIRONMENT ARCHITECTURE
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = uiName
 ScreenGui.ResetOnSpawn = false
@@ -219,7 +219,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(24, 12, 36)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true -- Required for smooth sizing collapses
+MainFrame.ClipsDescendants = true 
 MainFrame.Parent = ConfigCanvas
 ApplyRadius(MainFrame, 8)
 
@@ -229,7 +229,6 @@ UIStroke.Thickness = 1
 UIStroke.Transparency = 0.3
 UIStroke.Parent = MainFrame
 
--- CONVERTED TO IMAGEBUTTON LOGO FEATURING ASSET 138152502921929
 local TitleLabel = Instance.new("ImageButton")
 TitleLabel.Name = "LogoButton"
 TitleLabel.Size = UDim2.new(0, 40, 0, 40)
@@ -240,7 +239,6 @@ TitleLabel.ImageColor3 = Color3.fromRGB(255, 100, 200)
 TitleLabel.ZIndex = 5
 TitleLabel.Parent = ConfigCanvas
 
--- NEW Text Label placed next to the new asset image icon
 local TitleText = Instance.new("TextLabel")
 TitleText.Name = "TitleText"
 TitleText.Size = UDim2.new(0, 120, 0, 40)
@@ -254,7 +252,6 @@ TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.ZIndex = 5
 TitleText.Parent = ConfigCanvas
 
--- Grouping UI Elements inside a transparent CanvasGroup container for clean fade effects
 local MenuContents = Instance.new("CanvasGroup")
 MenuContents.Name = "MenuContents"
 MenuContents.Size = UDim2.new(1, 0, 1, 0)
@@ -270,7 +267,7 @@ ModeBtn.BackgroundColor3 = Color3.fromRGB(44, 22, 64)
 ModeBtn.BorderSizePixel = 0
 ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Color3.fromRGB(255, 200, 240)
-ModeBtn.Font = Enum.Font.FontId or Enum.Font.Michroma
+ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.TextSize = 13
 ModeBtn.ZIndex = 5
 ModeBtn.Parent = MenuContents
@@ -517,19 +514,16 @@ local function UpdateUI()
     end
 end
 
--- ANIMATED COLLAPSE LOGIC WITH FADE-OUT EFFECT
 TitleLabel.MouseButton1Click:Connect(function()
     EngineState.Collapsed = not EngineState.Collapsed
     
     local tInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
     if EngineState.Collapsed then
-        -- Smoothly collapse chassis down and fade components out
         TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 180, 0, 42)}):Play()
         TweenService:Create(MenuContents, tInfo, {GroupTransparency = 1}):Play()
         TweenService:Create(TitleLabel, tInfo, {ImageColor3 = Color3.fromRGB(180, 0, 180)}):Play()
     else
-        -- Smoothly expand chassis back up and fade components in
         TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 500, 0, 360)}):Play()
         TweenService:Create(MenuContents, tInfo, {GroupTransparency = 0}):Play()
         TweenService:Create(TitleLabel, tInfo, {ImageColor3 = Color3.fromRGB(255, 100, 200)}):Play()
