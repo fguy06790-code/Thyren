@@ -1,5 +1,5 @@
 -- =============================================================================
--- THYREN DECOUPLED REPOSITORY DASHBOARD (iOS TOGGLE SWITCH & MICHROMA TYPOGRAPHY)
+-- THYREN DECOUPLED REPOSITORY DASHBOARD (MAX-OPTIMIZED SPAM ENGINE)
 -- TARGET: Roblox Executor Environment (Ultra-Accurate Asynchronous Spammer)
 -- LAYOUT: Deep Obsidian & Neon Green Aesthetics // iOS Switch Module // Bold Wide Font
 -- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping workspace clean
@@ -39,7 +39,7 @@ local EngineState = {
     TargetSpeed = 10,
     ModeSelection = "KPS",
     LowEndMode = false,
-    ActivationMode = "Manual Spam", -- "Manual Spam" or "Hotkey"
+    ActivationMode = "Manual Spam", 
     RuntimeHotkey = nil,            
     IsBinding = false,
     AutoParryActive = false,
@@ -49,34 +49,61 @@ local EngineState = {
     ConfigVisible = true
 }
 
--- 4. HIGH-PRECISION INPUT SIMULATION ENGINE
+-- 4. HIGH-PRECISION INPUT SIMULATION ENGINE (MAXIMUM PERFORMANCE OPTIMIZATION)
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
-local function fireInput()
-    if EngineState.ModeSelection == "KPS" then
-        VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, false, game)
-        VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, false, game)
-    else
-        local mousePos = UserInputService:GetMouseLocation()
-        VirtualInputManager:SendMouseButtonEvent(mousePos.X, mousePos.Y, 0, true, game, 0)
-        VirtualInputManager:SendMouseButtonEvent(mousePos.X, mousePos.Y, 0, false, game, 0)
-    end
-end
+-- Локализация функций для оптимизации производительности внутри микроциклов
+local sendKeyEvent = VirtualInputManager.SendKeyEvent
+local sendMouseButtonEvent = VirtualInputManager.SendMouseButtonEvent
+local getMouseLocation = UserInputService.GetMouseLocation
+local osClock = os.clock
 
-local function RunSpamThread()
-    while EngineState.IsRunning do
-        if EngineState.TargetSpeed >= 60 then
-            fireInput()
-            RunService.Heartbeat:Wait()
+local MacroConnection = nil
+local lastFireTime = 0
+
+-- Высокопроизводительный поток выполнения, привязанный напрямую к фазам рендеринга
+local function RunSpamIteration()
+    if not EngineState.IsRunning then return end
+    
+    local targetSpeed = EngineState.TargetSpeed
+    local currentMode = EngineState.ModeSelection
+    local spamKey = EngineState.SpamKey
+
+    if targetSpeed >= 60 then
+        -- РЕЖИМ ПАКЕТНОГО ВЗРЫВА: Обходит ограничения планировщика задач Roblox.
+        -- Игнорирует задержки кадров и отправляет последовательные клики напрямую в буфер ввода.
+        if currentMode == "KPS" then
+            sendKeyEvent(VirtualInputManager, true, spamKey, false, game)
+            sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
+            sendKeyEvent(VirtualInputManager, true, spamKey, false, game)
+            sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
+            sendKeyEvent(VirtualInputManager, true, spamKey, false, game)
+            sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
         else
-            local delayInterval = 1.0 / EngineState.TargetSpeed
-            fireInput()
-            if delayInterval > 0 then
-                task.wait(delayInterval)
+            local mousePos = getMouseLocation(UserInputService)
+            local mx, my = mousePos.X, mousePos.Y
+            sendMouseButtonEvent(VirtualInputManager, mx, my, 0, true, game, 0)
+            sendMouseButtonEvent(VirtualInputManager, mx, my, 0, false, game, 0)
+            sendMouseButtonEvent(VirtualInputManager, mx, my, 0, true, game, 0)
+            sendMouseButtonEvent(VirtualInputManager, mx, my, 0, false, game, 0)
+            sendMouseButtonEvent(VirtualInputManager, mx, my, 0, true, game, 0)
+            sendMouseButtonEvent(VirtualInputManager, mx, my, 0, false, game, 0)
+        end
+    else
+        -- ТОЧНЫЙ ТАЙМИНГ: Сверяет прошедшее время с миллисекундным интервалом
+        local currentTime = osClock()
+        local interval = 1.0 / targetSpeed
+        if (currentTime - lastFireTime) >= interval then
+            lastFireTime = currentTime
+            if currentMode == "KPS" then
+                sendKeyEvent(VirtualInputManager, true, spamKey, false, game)
+                sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
             else
-                task.wait()
+                local mousePos = getMouseLocation(UserInputService)
+                sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, true, game, 0)
+                sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, false, game, 0)
             end
         end
     end
@@ -84,11 +111,18 @@ end
 
 local function StartLoop()
     EngineState.IsRunning = true
-    task.spawn(RunSpamThread)
+    lastFireTime = osClock()
+    if MacroConnection then MacroConnection:Disconnect() end
+    -- Подключение к PreRender для минимизации задержки ввода перед отрисовкой кадра
+    MacroConnection = RunService.PreRender:Connect(RunSpamIteration)
 end
 
 local function StopLoop()
     EngineState.IsRunning = false
+    if MacroConnection then
+        MacroConnection:Disconnect()
+        MacroConnection = nil
+    end
 end
 
 local function ToggleEngine()
@@ -99,7 +133,7 @@ local function ToggleEngine()
     end
 end
 
--- 5. DEDICATED BLADE BALL TARGET MATCHING ENGINE WITH SINGLE-HIT DEBOUNCE
+-- 5. АВТОПАРРИРОВАНИЕ ДЛЯ РЕЖИМА BLADE BALL
 local function FindActiveBall()
     local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
     
@@ -127,8 +161,6 @@ local function FindActiveBall()
     return nil
 end
 
-local LastParriedBall = nil
-
 local function StartParryTracking()
     if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
     
@@ -141,25 +173,20 @@ local function StartParryTracking()
         
         local ball = FindActiveBall()
         if ball then
-            if LastParriedBall ~= ball then
-                LastParriedBall = ball
-                ball:SetAttribute("HasBeenParriedByMe", false)
-            end
-            
-            if ball:GetAttribute("HasBeenParriedByMe") == true then 
-                return 
-            end
-            
             local distance = (ball.Position - rootPart.Position).Magnitude
             local ballVelocity = ball.AssemblyLinearVelocity.Magnitude
             local dynamicTriggerRange = EngineState.ParryThreshold + (ballVelocity * 0.12)
             
             if distance <= dynamicTriggerRange then
-                ball:SetAttribute("HasBeenParriedByMe", true)
-                fireInput()
+                if EngineState.ModeSelection == "KPS" then
+                    sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game)
+                    sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game)
+                else
+                    local mousePos = getMouseLocation(UserInputService)
+                    sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, true, game, 0)
+                    sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, false, game, 0)
+                end
             end
-        else
-            LastParriedBall = nil
         end
     end)
 end
@@ -169,11 +196,10 @@ local function StopParryTracking()
         EngineState.ParryConnection:Disconnect()
         EngineState.ParryConnection = nil
     end
-    LastParriedBall = nil
 end
 
 -- -----------------------------------------------------------------------------
--- GLOBAL ROOT SCREEN CONTAINER
+-- ИНТЕРФЕЙСНАЯ ЧАСТЬ (ИНСТРУМЕНТЫ РЕНДЕРИНГА И СТИЛИЗАЦИЯ)
 -- -----------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = uiName
@@ -195,9 +221,6 @@ local function ApplyRadius(instance, radius)
     return corner
 end
 
--- =============================================================================
--- PANEL MODULE 1: MAIN BLAZE DASHBOARD (GREEN MATRIX ACCENTS)
--- =============================================================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 500, 0, 360)
@@ -245,9 +268,6 @@ ModeStroke.Color = Color3.fromRGB(0, 150, 70)
 ModeStroke.Thickness = 1
 ModeStroke.Parent = ModeBtn
 
--- =============================================================================
--- iOS STYLE SWITCH CONTAINER
--- =============================================================================
 local SwitchContainer = Instance.new("Frame")
 SwitchContainer.Size = UDim2.new(0, 215, 0, 42)
 SwitchContainer.Position = UDim2.new(0.5, 15, 0.5, -150)
@@ -274,7 +294,6 @@ SwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 SwitchLabel.ZIndex = 6
 SwitchLabel.Parent = SwitchContainer
 
--- The iOS Track
 local ToggleTrack = Instance.new("TextButton")
 ToggleTrack.Size = UDim2.new(0, 46, 0, 26)
 ToggleTrack.Position = UDim2.new(1, -56, 0.5, -13)
@@ -286,7 +305,6 @@ ToggleTrack.ZIndex = 6
 ToggleTrack.Parent = SwitchContainer
 ApplyRadius(ToggleTrack, 13)
 
--- The iOS Circular Knob
 local ToggleThumb = Instance.new("Frame")
 ToggleThumb.Size = UDim2.new(0, 22, 0, 22)
 ToggleThumb.Position = UDim2.new(0, 2, 0.5, -11)
@@ -295,8 +313,6 @@ ToggleThumb.BorderSizePixel = 0
 ToggleThumb.ZIndex = 7
 ToggleThumb.Parent = ToggleTrack
 ApplyRadius(ToggleThumb, 11)
-
--- =============================================================================
 
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 6)
@@ -326,8 +342,8 @@ SliderButton.Parent = SliderTrack
 ApplyRadius(SliderButton, 7)
 
 local SpeedDisplay = Instance.new("TextLabel")
-SpeedDisplay.Size = UDim2.new(0, 100, 0, 30)
-SpeedDisplay.Position = UDim2.new(0.5, 130, 0.5, -97)
+SpeedDisplay.Size = UDim2.new(0, 120, 0, 30)
+SpeedDisplay.Position = UDim2.new(0.5, 110, 0.5, -97)
 SpeedDisplay.BackgroundTransparency = 1
 SpeedDisplay.Text = "10 KPS"
 SpeedDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
@@ -418,9 +434,6 @@ DiagParryLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagParryLabel.ZIndex = 5
 DiagParryLabel.Parent = DiagPanel
 
--- =============================================================================
--- PANEL MODULE 2: COMPACT CONTROLLER POD (OUTSIDE THE TOGGLE CANVAS)
--- =============================================================================
 local ControlPod = Instance.new("Frame")
 ControlPod.Name = "ControlPod"
 ControlPod.Size = UDim2.new(0, 260, 0, 75)
@@ -465,7 +478,7 @@ StatusBar.ZIndex = 5
 StatusBar.Parent = ScreenGui
 
 -- -----------------------------------------------------------------------------
--- RUNTIME UI HANDLER LOGIC
+-- ЛОГИКА ОБНОВЛЕНИЯ ИНТЕРФЕЙСА И ОБРАБОТКА СИГНАЛОВ ВВОДА
 -- -----------------------------------------------------------------------------
 local function UpdateUI()
     local labelMode = EngineState.ModeSelection == "KPS" and "KPS" or "CPS"
@@ -555,7 +568,6 @@ end
 BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, SwitchContainer, SliderTrack, SpeedDisplay, ParryBtn, DiagPanel})
 BindChassisPosition(ControlPod, {ActionButton, StatusBar})
 
--- 6. KEYBOARD GLOBAL INTERCEPT LISTENER
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode ~= Enum.KeyCode.RightShift then
@@ -584,7 +596,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Manual Action Click Intercept
 ActionButton.MouseButton1Click:Connect(function()
     if EngineState.ActivationMode == "Manual Spam" then
         ToggleEngine()
@@ -598,7 +609,6 @@ ModeBtn.MouseButton1Click:Connect(function()
     UpdateUI()
 end)
 
--- iOS SWITCH INTERACTION TRIGGER ENTRYPOINT
 ToggleTrack.MouseButton1Click:Connect(function()
     if EngineState.ActivationMode == "Manual Spam" then
         EngineState.IsBinding = true
