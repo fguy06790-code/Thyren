@@ -1,7 +1,7 @@
 -- =============================================================================
--- THYREN DECOUPLED REPOSITORY DASHBOARD (BLAZE MACRO EDITION / HIDING ACTION BUTTON)
+-- THYREN DECOUPLED REPOSITORY DASHBOARD (iOS TOGGLE SWITCH & MICHROMA TYPOGRAPHY)
 -- TARGET: Roblox Executor Environment (Ultra-Accurate Asynchronous Spammer)
--- LAYOUT: Deep Obsidian & Neon Green Aesthetics // Blade Precision Geometry
+-- LAYOUT: Deep Obsidian & Neon Green Aesthetics // iOS Switch Module // Bold Wide Font
 -- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping workspace clean
 -- =============================================================================
 
@@ -9,6 +9,7 @@ local uiName = "ThyrenEngineUI"
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
 
 -- 1. CLEANUP PREVIOUS INSTANCES
 pcall(function()
@@ -38,7 +39,7 @@ local EngineState = {
     TargetSpeed = 10,
     ModeSelection = "KPS",
     LowEndMode = false,
-    ActivationMode = "Manual Spam", 
+    ActivationMode = "Manual Spam", -- "Manual Spam" or "Hotkey"
     RuntimeHotkey = nil,            
     IsBinding = false,
     AutoParryActive = false,
@@ -218,10 +219,10 @@ local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(0, 460, 0, 40)
 TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -200)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "⚡ ｂｌａｚｅ － ｍａｃｒｏ ／ ｃｏｒｅ v2.0"
+TitleLabel.Text = "BLAZE MACRO CORE"
 TitleLabel.TextColor3 = Color3.fromRGB(0, 255, 120) 
-TitleLabel.Font = Enum.Font.Code
-TitleLabel.TextSize = 14
+TitleLabel.Font = Enum.Font.Michroma
+TitleLabel.TextSize = 16
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.ZIndex = 5
 TitleLabel.Parent = ConfigCanvas
@@ -231,9 +232,9 @@ ModeBtn.Size = UDim2.new(0, 215, 0, 42)
 ModeBtn.Position = UDim2.new(0.5, -230, 0.5, -150)
 ModeBtn.BackgroundColor3 = Color3.fromRGB(10, 24, 13) 
 ModeBtn.BorderSizePixel = 0
-ModeBtn.Text = "⚙️ Mode: Keyboard (KPS)"
+ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Color3.fromRGB(200, 255, 210)
-ModeBtn.Font = Enum.Font.SourceSansBold
+ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.TextSize = 13
 ModeBtn.ZIndex = 5
 ModeBtn.Parent = ConfigCanvas
@@ -244,24 +245,58 @@ ModeStroke.Color = Color3.fromRGB(0, 150, 70)
 ModeStroke.Thickness = 1
 ModeStroke.Parent = ModeBtn
 
--- Click-To-Bind Toggle Mode Switcher Button
-local ControlModeBtn = Instance.new("TextButton")
-ControlModeBtn.Size = UDim2.new(0, 215, 0, 42)
-ControlModeBtn.Position = UDim2.new(0.5, 15, 0.5, -150)
-ControlModeBtn.BackgroundColor3 = Color3.fromRGB(10, 24, 13)
-ControlModeBtn.BorderSizePixel = 0
-ControlModeBtn.Text = "🕹️ Trigger: [ Click to Bind ]"
-ControlModeBtn.TextColor3 = Color3.fromRGB(0, 255, 120)
-ControlModeBtn.Font = Enum.Font.SourceSansBold
-ControlModeBtn.TextSize = 13
-ControlModeBtn.ZIndex = 5
-ControlModeBtn.Parent = ConfigCanvas
-ApplyRadius(ControlModeBtn, 4)
+-- =============================================================================
+-- iOS STYLE SWITCH CONTAINER
+-- =============================================================================
+local SwitchContainer = Instance.new("Frame")
+SwitchContainer.Size = UDim2.new(0, 215, 0, 42)
+SwitchContainer.Position = UDim2.new(0.5, 15, 0.5, -150)
+SwitchContainer.BackgroundColor3 = Color3.fromRGB(10, 24, 13)
+SwitchContainer.BorderSizePixel = 0
+SwitchContainer.ZIndex = 5
+SwitchContainer.Parent = ConfigCanvas
+ApplyRadius(SwitchContainer, 4)
 
-local ControlStroke = Instance.new("UIStroke")
-ControlStroke.Color = Color3.fromRGB(0, 150, 70)
-ControlStroke.Thickness = 1
-ControlStroke.Parent = ControlModeBtn
+local SwitchStroke = Instance.new("UIStroke")
+SwitchStroke.Color = Color3.fromRGB(0, 150, 70)
+SwitchStroke.Thickness = 1
+SwitchStroke.Parent = SwitchContainer
+
+local SwitchLabel = Instance.new("TextLabel")
+SwitchLabel.Size = UDim2.new(0, 140, 1, 0)
+SwitchLabel.Position = UDim2.new(0, 12, 0, 0)
+SwitchLabel.BackgroundTransparency = 1
+SwitchLabel.Text = "KEYBIND"
+SwitchLabel.TextColor3 = Color3.fromRGB(200, 255, 210)
+SwitchLabel.Font = Enum.Font.Michroma
+SwitchLabel.TextSize = 12
+SwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+SwitchLabel.ZIndex = 6
+SwitchLabel.Parent = SwitchContainer
+
+-- The iOS Track
+local ToggleTrack = Instance.new("TextButton")
+ToggleTrack.Size = UDim2.new(0, 46, 0, 26)
+ToggleTrack.Position = UDim2.new(1, -56, 0.5, -13)
+ToggleTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 45) 
+ToggleTrack.BorderSizePixel = 0
+ToggleTrack.Text = ""
+ToggleTrack.AutoButtonColor = false
+ToggleTrack.ZIndex = 6
+ToggleTrack.Parent = SwitchContainer
+ApplyRadius(ToggleTrack, 13)
+
+-- The iOS Circular Knob
+local ToggleThumb = Instance.new("Frame")
+ToggleThumb.Size = UDim2.new(0, 22, 0, 22)
+ToggleThumb.Position = UDim2.new(0, 2, 0.5, -11)
+ToggleThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ToggleThumb.BorderSizePixel = 0
+ToggleThumb.ZIndex = 7
+ToggleThumb.Parent = ToggleTrack
+ApplyRadius(ToggleThumb, 11)
+
+-- =============================================================================
 
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 6)
@@ -296,7 +331,7 @@ SpeedDisplay.Position = UDim2.new(0.5, 130, 0.5, -97)
 SpeedDisplay.BackgroundTransparency = 1
 SpeedDisplay.Text = "10 KPS"
 SpeedDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
-SpeedDisplay.Font = Enum.Font.Code
+SpeedDisplay.Font = Enum.Font.Michroma
 SpeedDisplay.TextSize = 14
 SpeedDisplay.TextXAlignment = Enum.TextXAlignment.Right
 SpeedDisplay.ZIndex = 5
@@ -307,9 +342,9 @@ ParryBtn.Size = UDim2.new(0, 460, 0, 40)
 ParryBtn.Position = UDim2.new(0.5, -230, 0.5, -55)
 ParryBtn.BackgroundColor3 = Color3.fromRGB(10, 24, 13)
 ParryBtn.BorderSizePixel = 0
-ParryBtn.Text = "⚔️ Auto Parry: Disabled"
+ParryBtn.Text = "AUTO PARRY: DISABLED"
 ParryBtn.TextColor3 = Color3.fromRGB(0, 150, 70)
-ParryBtn.Font = Enum.Font.SourceSansBold
+ParryBtn.Font = Enum.Font.Michroma
 ParryBtn.TextSize = 14
 ParryBtn.ZIndex = 5
 ParryBtn.Parent = ConfigCanvas
@@ -339,10 +374,10 @@ local DiagHeader = Instance.new("TextLabel")
 DiagHeader.Size = UDim2.new(1, -20, 0, 25)
 DiagHeader.Position = UDim2.new(0, 15, 0, 8)
 DiagHeader.BackgroundTransparency = 1
-DiagHeader.Text = "📄 CONSOLE_LOG.txt"
+DiagHeader.Text = "SYSTEM LOGS"
 DiagHeader.TextColor3 = Color3.fromRGB(150, 255, 180)
-DiagHeader.Font = Enum.Font.Code
-DiagHeader.TextSize = 13
+DiagHeader.Font = Enum.Font.Michroma
+DiagHeader.TextSize = 12
 DiagHeader.TextXAlignment = Enum.TextXAlignment.Left
 DiagHeader.ZIndex = 5
 DiagHeader.Parent = DiagPanel
@@ -351,10 +386,10 @@ local DiagMacroLabel = Instance.new("TextLabel")
 DiagMacroLabel.Size = UDim2.new(1, -30, 0, 20)
 DiagMacroLabel.Position = UDim2.new(0, 15, 0, 35)
 DiagMacroLabel.BackgroundTransparency = 1
-DiagMacroLabel.Text = "● Engine Status: Standing By"
+DiagMacroLabel.Text = "STATUS: STANDBY"
 DiagMacroLabel.TextColor3 = Color3.fromRGB(100, 140, 110)
-DiagMacroLabel.Font = Enum.Font.SourceSans
-DiagMacroLabel.TextSize = 13
+DiagMacroLabel.Font = Enum.Font.Michroma
+DiagMacroLabel.TextSize = 11
 DiagMacroLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagMacroLabel.ZIndex = 5
 DiagMacroLabel.Parent = DiagPanel
@@ -363,10 +398,10 @@ local DiagKeyLabel = Instance.new("TextLabel")
 DiagKeyLabel.Size = UDim2.new(1, -30, 0, 20)
 DiagKeyLabel.Position = UDim2.new(0, 15, 0, 55)
 DiagKeyLabel.BackgroundTransparency = 1
-DiagKeyLabel.Text = "● Target Register Bind: [F]"
+DiagKeyLabel.Text = "BIND REGISTER: NONE"
 DiagKeyLabel.TextColor3 = Color3.fromRGB(100, 140, 110)
-DiagKeyLabel.Font = Enum.Font.SourceSans
-DiagKeyLabel.TextSize = 13
+DiagKeyLabel.Font = Enum.Font.Michroma
+DiagKeyLabel.TextSize = 11
 DiagKeyLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagKeyLabel.ZIndex = 5
 DiagKeyLabel.Parent = DiagPanel
@@ -375,10 +410,10 @@ local DiagParryLabel = Instance.new("TextLabel")
 DiagParryLabel.Size = UDim2.new(1, -30, 0, 20)
 DiagParryLabel.Position = UDim2.new(0, 15, 0, 75)
 DiagParryLabel.BackgroundTransparency = 1
-DiagParryLabel.Text = "● Defensive Matrix: Disengaged"
+DiagParryLabel.Text = "DEFENSE MATRIX: DISENGAGED"
 DiagParryLabel.TextColor3 = Color3.fromRGB(100, 140, 110)
-DiagParryLabel.Font = Enum.Font.SourceSans
-DiagParryLabel.TextSize = 13
+DiagParryLabel.Font = Enum.Font.Michroma
+DiagParryLabel.TextSize = 11
 DiagParryLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagParryLabel.ZIndex = 5
 DiagParryLabel.Parent = DiagPanel
@@ -409,10 +444,10 @@ ActionButton.Size = UDim2.new(0, 230, 0, 36)
 ActionButton.Position = UDim2.new(0.5, -115, 0.5, 175)
 ActionButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 ActionButton.BorderSizePixel = 0
-ActionButton.Text = "▶ Run Macro"
+ActionButton.Text = "ACTIVATE"
 ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ActionButton.Font = Enum.Font.SourceSansBold
-ActionButton.TextSize = 14
+ActionButton.Font = Enum.Font.Michroma
+ActionButton.TextSize = 15
 ActionButton.AutoButtonColor = false
 ActionButton.ZIndex = 5
 ActionButton.Parent = ScreenGui 
@@ -422,10 +457,10 @@ local StatusBar = Instance.new("TextLabel")
 StatusBar.Size = UDim2.new(0, 230, 0, 18)
 StatusBar.Position = UDim2.new(0.5, -115, 0.5, 213)
 StatusBar.BackgroundTransparency = 1
-StatusBar.Text = "Status: Workflow Idle"
+StatusBar.Text = "WORKFLOW IDLE"
 StatusBar.TextColor3 = Color3.fromRGB(100, 140, 110)
-StatusBar.Font = Enum.Font.SourceSans
-StatusBar.TextSize = 11
+StatusBar.Font = Enum.Font.Michroma
+StatusBar.TextSize = 10
 StatusBar.ZIndex = 5
 StatusBar.Parent = ScreenGui
 
@@ -436,7 +471,6 @@ local function UpdateUI()
     local labelMode = EngineState.ModeSelection == "KPS" and "KPS" or "CPS"
     SpeedDisplay.Text = string.format("%d %s", EngineState.TargetSpeed, labelMode)
     
-    -- FORCE THE ENTIRE MANUAL INTERACTION POD STACK TO DISAPPEAR/REAPPEAR
     if EngineState.ActivationMode == "Manual Spam" then
         ControlPod.Visible = true
         ActionButton.Visible = true
@@ -448,20 +482,28 @@ local function UpdateUI()
     end
     
     if EngineState.IsRunning then
-        StatusBar.Text = "Status: Macro Firing"
+        StatusBar.Text = "MACRO FIRING"
         StatusBar.TextColor3 = Color3.fromRGB(0, 255, 120)
-        ActionButton.Text = "■ Stop Macro"
+        ActionButton.Text = "HALT CORE"
         ActionButton.BackgroundColor3 = Color3.fromRGB(150, 10, 30) 
-        DiagMacroLabel.Text = "● Engine Status: Running Core Tasks"
+        DiagMacroLabel.Text = "STATUS: RUNNING CORE"
         DiagMacroLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
     else
-        StatusBar.Text = "Status: Workflow Idle"
+        StatusBar.Text = "WORKFLOW IDLE"
         StatusBar.TextColor3 = Color3.fromRGB(100, 140, 110)
-        ActionButton.Text = "▶ Run Macro"
+        ActionButton.Text = "ACTIVATE"
         ActionButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
-        DiagMacroLabel.Text = "● Engine Status: Standing By"
+        DiagMacroLabel.Text = "STATUS: STANDBY"
         DiagMacroLabel.TextColor3 = Color3.fromRGB(100, 140, 110)
     end
+end
+
+local function AnimateSwitch(isOn)
+    local targetPos = isOn and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)
+    local targetColor = isOn and Color3.fromRGB(0, 210, 90) or Color3.fromRGB(40, 40, 45)
+    
+    TweenService:Create(ToggleThumb, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+    TweenService:Create(ToggleTrack, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetColor}):Play()
 end
 
 local IsDragging = false
@@ -510,7 +552,7 @@ local function BindChassisPosition(chassisFrame, elementList)
     end)
 end
 
-BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, ControlModeBtn, SliderTrack, SpeedDisplay, ParryBtn, DiagPanel})
+BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, SwitchContainer, SliderTrack, SpeedDisplay, ParryBtn, DiagPanel})
 BindChassisPosition(ControlPod, {ActionButton, StatusBar})
 
 -- 6. KEYBOARD GLOBAL INTERCEPT LISTENER
@@ -518,10 +560,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode ~= Enum.KeyCode.RightShift then
             EngineState.RuntimeHotkey = input.KeyCode
-            EngineState.ActivationMode = "Hotkey (" .. input.KeyCode.Name .. ")"
+            EngineState.ActivationMode = "Hotkey"
             EngineState.IsBinding = false
-            ControlModeBtn.Text = "🕹️ Trigger: " .. EngineState.ActivationMode
-            ControlModeBtn.TextColor3 = Color3.fromRGB(200, 255, 210)
+            SwitchLabel.Text = "[" .. input.KeyCode.Name .. "]"
+            DiagKeyLabel.Text = "BIND REGISTER: [" .. input.KeyCode.Name .. "]"
             UpdateUI()
         end
         return
@@ -535,40 +577,43 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
     
     if EngineState.RuntimeHotkey and input.KeyCode == EngineState.RuntimeHotkey then
+        if EngineState.ActivationMode == "Hotkey" then
+            ToggleEngine()
+            UpdateUI()
+        end
+    end
+end)
+
+-- Manual Action Click Intercept
+ActionButton.MouseButton1Click:Connect(function()
+    if EngineState.ActivationMode == "Manual Spam" then
         ToggleEngine()
         UpdateUI()
     end
 end)
 
--- GUI Execution Intercept
-ActionButton.MouseButton1Click:Connect(function()
-    ToggleEngine()
-    UpdateUI()
-end)
-
 ModeBtn.MouseButton1Click:Connect(function()
     EngineState.ModeSelection = EngineState.ModeSelection == "KPS" and "CPS" or "KPS"
-    ModeBtn.Text = EngineState.ModeSelection == "KPS" and "⚙️ Mode: Keyboard (KPS)" or "⚙️ Mode: Mouse (CPS)"
+    ModeBtn.Text = EngineState.ModeSelection == "KPS" and "MODE: KPS" or "MODE: CPS"
     UpdateUI()
 end)
 
--- Click-To-Bind State Switching Loop Logic
-ControlModeBtn.MouseButton1Click:Connect(function()
+-- iOS SWITCH INTERACTION TRIGGER ENTRYPOINT
+ToggleTrack.MouseButton1Click:Connect(function()
     if EngineState.ActivationMode == "Manual Spam" then
         EngineState.IsBinding = true
-        ControlModeBtn.Text = "🕹️ Press any key..."
-        ControlModeBtn.TextColor3 = Color3.fromRGB(255, 255, 100)
-        
-        -- Hide the manual trigger buttons right as the key capture starts
-        ControlPod.Visible = false
-        ActionButton.Visible = false
-        StatusBar.Visible = false
+        EngineState.ActivationMode = "Hotkey"
+        SwitchLabel.Text = "PRESS KEY"
+        AnimateSwitch(true)
+        UpdateUI()
     else
+        if EngineState.IsRunning then StopLoop() end
         EngineState.ActivationMode = "Manual Spam"
         EngineState.RuntimeHotkey = nil
         EngineState.IsBinding = false
-        ControlModeBtn.Text = "🕹️ Trigger: Manual Spam"
-        ControlModeBtn.TextColor3 = Color3.fromRGB(200, 255, 210)
+        SwitchLabel.Text = "KEYBIND"
+        DiagKeyLabel.Text = "BIND REGISTER: NONE"
+        AnimateSwitch(false)
         UpdateUI()
     end
 end)
@@ -588,15 +633,15 @@ end
 ParryBtn.MouseButton1Click:Connect(function()
     EngineState.AutoParryActive = not EngineState.AutoParryActive
     if EngineState.AutoParryActive then
-        ParryBtn.Text = "⚔️ Auto Parry: Active"
+        ParryBtn.Text = "AUTO PARRY: ACTIVE"
         ParryBtn.TextColor3 = Color3.fromRGB(0, 255, 120)
-        DiagParryLabel.Text = "● Defensive Matrix: Connected"
+        DiagParryLabel.Text = "DEFENSE MATRIX: ACTIVE"
         DiagParryLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
         StartParryTracking()
     else
-        ParryBtn.Text = "⚔️ Auto Parry: Disabled"
+        ParryBtn.Text = "AUTO PARRY: DISABLED"
         ParryBtn.TextColor3 = Color3.fromRGB(0, 150, 70)
-        DiagParryLabel.Text = "● Defensive Matrix: Disengaged"
+        DiagParryLabel.Text = "DEFENSE MATRIX: DISENGAGED"
         DiagParryLabel.TextColor3 = Color3.fromRGB(100, 140, 110)
         StopParryTracking()
     end
