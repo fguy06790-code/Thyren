@@ -1,8 +1,8 @@
 -- =============================================================================
--- THYREN DECOUPLED REPOSITORY DASHBOARD (HIGH-PRECISION GITHUB THEME)
+-- THYREN DECOUPLED REPOSITORY DASHBOARD (CRIMSON VAPORWAVE / PERSISTENT ACTION)
 -- TARGET: Roblox Executor Environment (Ultra-Accurate Asynchronous Spammer)
--- LAYOUT: Open-Source Dashboard Layout & Embedded Badge Metrics
--- TOGGLE: Press RIGHT SHIFT to Hide/Show the Configuration Control Panel
+-- LAYOUT: Deep Obsidian & Crimson Aesthetics // Smooth Embedded Geometry
+-- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping the start button visible
 -- =============================================================================
 
 local uiName = "ThyrenEngineUI"
@@ -61,7 +61,6 @@ local function fireInput()
     end
 end
 
--- Asynchronous high-frequency thread loop for precise execution intervals
 local function RunSpamThread()
     while EngineState.IsRunning do
         local delayInterval = 1.0 / EngineState.TargetSpeed
@@ -70,7 +69,7 @@ local function RunSpamThread()
         if delayInterval > 0 then
             task.wait(delayInterval)
         else
-            task.wait() -- Absolute hardware cap safeguard
+            task.wait()
         end
     end
 end
@@ -133,6 +132,14 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = TargetParent
 
+-- CONDITIONAL CANVAS ELEMENT (Holds items that respond to toggle inputs)
+local ConfigCanvas = Instance.new("Frame")
+ConfigCanvas.Name = "ConfigCanvas"
+ConfigCanvas.Size = UDim2.new(1, 0, 1, 0)
+ConfigCanvas.BackgroundTransparency = 1
+ConfigCanvas.Visible = true
+ConfigCanvas.Parent = ScreenGui
+
 local function ApplyRadius(instance, radius)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, radius)
@@ -141,73 +148,73 @@ local function ApplyRadius(instance, radius)
 end
 
 -- =============================================================================
--- PANEL MODULE 1: MAIN DASHBOARD (GITHUB REPOSITORY FLAT THEME)
+-- PANEL MODULE 1: MAIN DASHBOARD (INSIDE THE TOGGLE CANVAS)
 -- =============================================================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 500, 0, 360)
 MainFrame.Position = UDim2.new(0.5, -250, 0.5, -210)
-MainFrame.BackgroundColor3 = Color3.fromRGB(13, 17, 23)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 3, 5) -- Deep Obsidian Wine
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
-ApplyRadius(MainFrame, 8)
+MainFrame.Parent = ConfigCanvas
+ApplyRadius(MainFrame, 10)
 
 -- Header Title Label
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(0, 460, 0, 40)
 TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -200)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "📦 thyren-engine / core-dashboard"
-TitleLabel.TextColor3 = Color3.fromRGB(201, 209, 217)
+TitleLabel.Text = "🎵 ｔｈｙｒｅｎ － ｅｎｇｉｎｅ ／ ｃｏｒｅ"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 60, 100) -- Hot Synth Pink/Red
 TitleLabel.Font = Enum.Font.Code
-TitleLabel.TextSize = 14
+TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.ZIndex = 5
-TitleLabel.Parent = ScreenGui
+TitleLabel.Parent = ConfigCanvas
 
 -- Mode Selection Switcher Button
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Size = UDim2.new(0, 215, 0, 42)
 ModeBtn.Position = UDim2.new(0.5, -230, 0.5, -150)
-ModeBtn.BackgroundColor3 = Color3.fromRGB(33, 38, 45)
+ModeBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12) -- Dark Velvet Crimson Base
 ModeBtn.BorderSizePixel = 0
 ModeBtn.Text = "⚙️ Mode: Keyboard (KPS)"
-ModeBtn.TextColor3 = Color3.fromRGB(240, 246, 252)
+ModeBtn.TextColor3 = Color3.fromRGB(255, 210, 220)
 ModeBtn.Font = Enum.Font.SourceSansBold
 ModeBtn.TextSize = 13
 ModeBtn.ZIndex = 5
-ModeBtn.Parent = ScreenGui
+ModeBtn.Parent = ConfigCanvas
 ApplyRadius(ModeBtn, 6)
 
 -- Hardware Low End Performance Guard
 local GuardBtn = Instance.new("TextButton")
 GuardBtn.Size = UDim2.new(0, 215, 0, 42)
 GuardBtn.Position = UDim2.new(0.5, 15, 0.5, -150)
-GuardBtn.BackgroundColor3 = Color3.fromRGB(33, 38, 45)
+GuardBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12)
 GuardBtn.BorderSizePixel = 0
 GuardBtn.Text = "🛡️ Profile: Uncapped"
-GuardBtn.TextColor3 = Color3.fromRGB(240, 246, 252)
+GuardBtn.TextColor3 = Color3.fromRGB(255, 210, 220)
 GuardBtn.Font = Enum.Font.SourceSansBold
 GuardBtn.TextSize = 13
 GuardBtn.ZIndex = 5
-GuardBtn.Parent = ScreenGui
+GuardBtn.Parent = ConfigCanvas
 ApplyRadius(GuardBtn, 6)
 
 -- INTERACTIVE SLIDER COMPONENT
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 6)
 SliderTrack.Position = UDim2.new(0.5, -230, 0.5, -85)
-SliderTrack.BackgroundColor3 = Color3.fromRGB(48, 54, 61)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(45, 15, 22) -- Dull Dark Red Track
 SliderTrack.BorderSizePixel = 0
 SliderTrack.ZIndex = 5
-SliderTrack.Parent = ScreenGui
+SliderTrack.Parent = ConfigCanvas
 ApplyRadius(SliderTrack, 3)
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(31, 111, 235)
+SliderFill.BackgroundColor3 = Color3.fromRGB(230, 20, 60) -- Bright Neon Crimson Fill
 SliderFill.BorderSizePixel = 0
 SliderFill.ZIndex = 6
 SliderFill.Parent = SliderTrack
@@ -216,7 +223,7 @@ ApplyRadius(SliderFill, 3)
 local SliderButton = Instance.new("TextButton")
 SliderButton.Size = UDim2.new(0, 14, 0, 14)
 SliderButton.Position = UDim2.new(0.01, -7, 0.5, -7)
-SliderButton.BackgroundColor3 = Color3.fromRGB(240, 246, 252)
+SliderButton.BackgroundColor3 = Color3.fromRGB(255, 100, 130)
 SliderButton.BorderSizePixel = 0
 SliderButton.Text = ""
 SliderButton.ZIndex = 7
@@ -229,25 +236,25 @@ SpeedDisplay.Size = UDim2.new(0, 100, 0, 30)
 SpeedDisplay.Position = UDim2.new(0.5, 130, 0.5, -97)
 SpeedDisplay.BackgroundTransparency = 1
 SpeedDisplay.Text = "10 KPS"
-SpeedDisplay.TextColor3 = Color3.fromRGB(56, 139, 253)
+SpeedDisplay.TextColor3 = Color3.fromRGB(255, 40, 80)
 SpeedDisplay.Font = Enum.Font.Code
 SpeedDisplay.TextSize = 14
 SpeedDisplay.TextXAlignment = Enum.TextXAlignment.Right
 SpeedDisplay.ZIndex = 5
-SpeedDisplay.Parent = ScreenGui
+SpeedDisplay.Parent = ConfigCanvas
 
 -- AUTO PARRY TOGGLE INTERFACE UTILITY
 local ParryBtn = Instance.new("TextButton")
 ParryBtn.Size = UDim2.new(0, 460, 0, 40)
 ParryBtn.Position = UDim2.new(0.5, -230, 0.5, -55)
-ParryBtn.BackgroundColor3 = Color3.fromRGB(33, 38, 45)
+ParryBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12)
 ParryBtn.BorderSizePixel = 0
 ParryBtn.Text = "⚔️ Auto Parry: Disabled"
-ParryBtn.TextColor3 = Color3.fromRGB(248, 81, 73)
+ParryBtn.TextColor3 = Color3.fromRGB(150, 20, 40)
 ParryBtn.Font = Enum.Font.SourceSansBold
 ParryBtn.TextSize = 14
 ParryBtn.ZIndex = 5
-ParryBtn.Parent = ScreenGui
+ParryBtn.Parent = ConfigCanvas
 ApplyRadius(ParryBtn, 6)
 
 -- =============================================================================
@@ -257,18 +264,18 @@ local DiagPanel = Instance.new("Frame")
 DiagPanel.Name = "DiagPanel"
 DiagPanel.Size = UDim2.new(0, 460, 0, 110)
 DiagPanel.Position = UDim2.new(0.5, -230, 0.5, 5)
-DiagPanel.BackgroundColor3 = Color3.fromRGB(22, 27, 34)
+DiagPanel.BackgroundColor3 = Color3.fromRGB(16, 5, 8)
 DiagPanel.BorderSizePixel = 0
 DiagPanel.ZIndex = 4
-DiagPanel.Parent = ScreenGui
+DiagPanel.Parent = ConfigCanvas
 ApplyRadius(DiagPanel, 6)
 
 local DiagHeader = Instance.new("TextLabel")
 DiagHeader.Size = UDim2.new(1, -20, 0, 25)
 DiagHeader.Position = UDim2.new(0, 15, 0, 8)
 DiagHeader.BackgroundTransparency = 1
-DiagHeader.Text = "📄 README.md"
-DiagHeader.TextColor3 = Color3.fromRGB(201, 209, 217)
+DiagHeader.Text = "📄 SYSTEM_LOG.md"
+DiagHeader.TextColor3 = Color3.fromRGB(255, 150, 170)
 DiagHeader.Font = Enum.Font.Code
 DiagHeader.TextSize = 13
 DiagHeader.TextXAlignment = Enum.TextXAlignment.Left
@@ -280,7 +287,7 @@ DiagMacroLabel.Size = UDim2.new(1, -30, 0, 20)
 DiagMacroLabel.Position = UDim2.new(0, 15, 0, 35)
 DiagMacroLabel.BackgroundTransparency = 1
 DiagMacroLabel.Text = "● Engine Status: Standing By"
-DiagMacroLabel.TextColor3 = Color3.fromRGB(139, 148, 158)
+DiagMacroLabel.TextColor3 = Color3.fromRGB(140, 100, 110)
 DiagMacroLabel.Font = Enum.Font.SourceSans
 DiagMacroLabel.TextSize = 13
 DiagMacroLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -292,7 +299,7 @@ DiagKeyLabel.Size = UDim2.new(1, -30, 0, 20)
 DiagKeyLabel.Position = UDim2.new(0, 15, 0, 55)
 DiagKeyLabel.BackgroundTransparency = 1
 DiagKeyLabel.Text = "● Target Register Bind: [F]"
-DiagKeyLabel.TextColor3 = Color3.fromRGB(139, 148, 158)
+DiagKeyLabel.TextColor3 = Color3.fromRGB(140, 100, 110)
 DiagKeyLabel.Font = Enum.Font.SourceSans
 DiagKeyLabel.TextSize = 13
 DiagKeyLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -304,7 +311,7 @@ DiagParryLabel.Size = UDim2.new(1, -30, 0, 20)
 DiagParryLabel.Position = UDim2.new(0, 15, 0, 75)
 DiagParryLabel.BackgroundTransparency = 1
 DiagParryLabel.Text = "● Defensive Matrix: Disengaged"
-DiagParryLabel.TextColor3 = Color3.fromRGB(139, 148, 158)
+DiagParryLabel.TextColor3 = Color3.fromRGB(140, 100, 110)
 DiagParryLabel.Font = Enum.Font.SourceSans
 DiagParryLabel.TextSize = 13
 DiagParryLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -313,17 +320,17 @@ DiagParryLabel.Parent = DiagPanel
 
 
 -- =============================================================================
--- PANEL MODULE 2: COMPACT CONTROLLER POD (GITHUB ACTIONS STYLE)
+-- PANEL MODULE 2: COMPACT CONTROLLER POD (OUTSIDE THE TOGGLE CANVAS)
 -- =============================================================================
 local ControlPod = Instance.new("Frame")
 ControlPod.Name = "ControlPod"
 ControlPod.Size = UDim2.new(0, 260, 0, 75)
 ControlPod.Position = UDim2.new(0.5, -130, 0.5, 160)
-ControlPod.BackgroundColor3 = Color3.fromRGB(13, 17, 23)
+ControlPod.BackgroundColor3 = Color3.fromRGB(10, 3, 5)
 ControlPod.BorderSizePixel = 0
 ControlPod.Active = true
 ControlPod.Draggable = true
-ControlPod.Parent = ScreenGui
+ControlPod.Parent = ScreenGui -- Parented directly to the screen layout so it never closes
 ApplyRadius(ControlPod, 8)
 
 -- Compact Operational Toggle Button
@@ -331,7 +338,7 @@ local ActionButton = Instance.new("TextButton")
 ActionButton.Name = "ActionButton"
 ActionButton.Size = UDim2.new(0, 230, 0, 36)
 ActionButton.Position = UDim2.new(0.5, -115, 0.5, 175)
-ActionButton.BackgroundColor3 = Color3.fromRGB(35, 134, 54)
+ActionButton.BackgroundColor3 = Color3.fromRGB(180, 15, 50)
 ActionButton.BorderSizePixel = 0
 ActionButton.Text = "▶ Run Action"
 ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -339,7 +346,7 @@ ActionButton.Font = Enum.Font.SourceSansBold
 ActionButton.TextSize = 14
 ActionButton.AutoButtonColor = false
 ActionButton.ZIndex = 5
-ActionButton.Parent = ScreenGui
+ActionButton.Parent = ScreenGui -- Extracted safely from the auto-hide container loop
 ApplyRadius(ActionButton, 6)
 
 -- Standalone Operation Status Readout Line Footer
@@ -348,13 +355,11 @@ StatusBar.Size = UDim2.new(0, 230, 0, 18)
 StatusBar.Position = UDim2.new(0.5, -115, 0.5, 213)
 StatusBar.BackgroundTransparency = 1
 StatusBar.Text = "Status: Workflow Idle"
-StatusBar.TextColor3 = Color3.fromRGB(139, 148, 158)
+StatusBar.TextColor3 = Color3.fromRGB(140, 100, 110)
 StatusBar.Font = Enum.Font.SourceSans
 StatusBar.TextSize = 11
 StatusBar.ZIndex = 5
 StatusBar.Parent = ScreenGui
-
-
 -- -----------------------------------------------------------------------------
 -- RUNTIME UI HANDLER LOGIC
 -- -----------------------------------------------------------------------------
@@ -364,22 +369,21 @@ local function UpdateUI()
     
     if EngineState.IsRunning then
         StatusBar.Text = "Status: Action Active"
-        StatusBar.TextColor3 = Color3.fromRGB(46, 160, 67)
+        StatusBar.TextColor3 = Color3.fromRGB(255, 40, 80)
         ActionButton.Text = "■ Stop Action"
-        ActionButton.BackgroundColor3 = Color3.fromRGB(248, 81, 73)
+        ActionButton.BackgroundColor3 = Color3.fromRGB(100, 10, 25)
         DiagMacroLabel.Text = "● Engine Status: Running Core Tasks"
-        DiagMacroLabel.TextColor3 = Color3.fromRGB(46, 160, 67)
+        DiagMacroLabel.TextColor3 = Color3.fromRGB(255, 40, 80)
     else
         StatusBar.Text = "Status: Workflow Idle"
-        StatusBar.TextColor3 = Color3.fromRGB(139, 148, 158)
+        StatusBar.TextColor3 = Color3.fromRGB(140, 100, 110)
         ActionButton.Text = "▶ Run Action"
-        ActionButton.BackgroundColor3 = Color3.fromRGB(35, 134, 54)
+        ActionButton.BackgroundColor3 = Color3.fromRGB(180, 15, 50)
         DiagMacroLabel.Text = "● Engine Status: Standing By"
-        DiagMacroLabel.TextColor3 = Color3.fromRGB(139, 148, 158)
+        DiagMacroLabel.TextColor3 = Color3.fromRGB(140, 100, 110)
     end
 end
 
--- Slider Axis Tracking Mechanics
 local IsDragging = false
 
 local function UpdateSlider(inputObj)
@@ -413,7 +417,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Structural Chassis Matrix Pinning Tracking
 local function BindChassisPosition(chassisFrame, elementList)
     local offsets = {}
     for _, el in ipairs(elementList) do
@@ -431,18 +434,11 @@ BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, GuardBtn, SliderTrack, Spee
 BindChassisPosition(ControlPod, {ActionButton, StatusBar})
 
 -- 6. KEYBOARD VISIBILITY INPUT BIND (RIGHT SHIFT)
+-- Toggles only the ConfigCanvas box, leaving the core operations widget untouched
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
         EngineState.ConfigVisible = not EngineState.ConfigVisible
-        
-        MainFrame.Visible = EngineState.ConfigVisible
-        TitleLabel.Visible = EngineState.ConfigVisible
-        ModeBtn.Visible = EngineState.ConfigVisible
-        GuardBtn.Visible = EngineState.ConfigVisible
-        SliderTrack.Visible = EngineState.ConfigVisible
-        SpeedDisplay.Visible = EngineState.ConfigVisible
-        ParryBtn.Visible = EngineState.ConfigVisible
-        DiagPanel.Visible = EngineState.ConfigVisible
+        ConfigCanvas.Visible = EngineState.ConfigVisible
     end
 end)
 
@@ -462,7 +458,7 @@ ModeBtn.MouseButton1Click:Connect(function()
     UpdateUI()
 end)
 
-GuardBtn.MouseButton1Click:Connect(function()
+getgenv().ThyrenLowEndMode = function()
     EngineState.LowEndMode = not EngineState.LowEndMode
     if EngineState.LowEndMode then
         GuardBtn.Text = "🛡️ Profile: Low-End"
@@ -477,21 +473,24 @@ GuardBtn.MouseButton1Click:Connect(function()
     SliderButton.Position = UDim2.new(scale, -7, 0.5, -7)
     
     UpdateUI()
-end)
+end
+
+-- Wire UI buttons to internal states
+GuardBtn.MouseButton1Click:Connect(ThyrenLowEndMode)
 
 ParryBtn.MouseButton1Click:Connect(function()
     EngineState.AutoParryActive = not EngineState.AutoParryActive
     if EngineState.AutoParryActive then
         ParryBtn.Text = "⚔️ Auto Parry: Active"
-        ParryBtn.TextColor3 = Color3.fromRGB(46, 160, 67)
+        ParryBtn.TextColor3 = Color3.fromRGB(255, 40, 80)
         DiagParryLabel.Text = "● Defensive Matrix: Connected"
-        DiagParryLabel.TextColor3 = Color3.fromRGB(46, 160, 67)
+        DiagParryLabel.TextColor3 = Color3.fromRGB(255, 40, 80)
         StartParryTracking()
     else
         ParryBtn.Text = "⚔️ Auto Parry: Disabled"
-        ParryBtn.TextColor3 = Color3.fromRGB(248, 81, 73)
+        ParryBtn.TextColor3 = Color3.fromRGB(150, 20, 40)
         DiagParryLabel.Text = "● Defensive Matrix: Disengaged"
-        DiagParryLabel.TextColor3 = Color3.fromRGB(139, 148, 158)
+        DiagParryLabel.TextColor3 = Color3.fromRGB(140, 100, 110)
         StopParryTracking()
     end
 end)
