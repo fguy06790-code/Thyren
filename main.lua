@@ -39,7 +39,7 @@ local EngineState = {
     ModeSelection = "KPS",
     LowEndMode = false,
     AutoParryActive = false,
-    ParryThreshold = 45,
+    ParryThreshold = 65, -- Increased slightly for better ping/latency registration
     SpamKey = Enum.KeyCode.F,
     ParryConnection = nil,
     ConfigVisible = true
@@ -83,20 +83,40 @@ local function StopLoop()
     EngineState.IsRunning = false
 end
 
--- 5. DEFENSIVE BALL DETECTION SYSTEM
+-- 5. RE-ENGINEERED DEFENSIVE BALL DETECTION SYSTEM
 local function FindActiveBall()
-    for _, obj in ipairs(workspace:GetChildren()) do
-        if obj.Name == "Ball" or obj:FindFirstChild("Ball") or obj:GetAttribute("Ball") then
-            return obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
+    -- Check common specific folders first where games isolate moving objects
+    local targets = {workspace, workspace:FindFirstChild("Balls"), workspace:FindFirstChild("TrainingBalls")}
+    
+    for _, container in ipairs(targets) do
+        if container then
+            for _, obj in ipairs(container:GetChildren()) do
+                -- Pattern match for "Ball" names, attributes, or structural mesh qualities
+                if string.find(string.lower(obj.Name), "ball") or obj:GetAttribute("Ball") or obj:FindFirstChild("WaveVisual") then
+                    if obj:IsA("BasePart") then
+                        return obj
+                    elseif obj:FindFirstChildOfClass("BasePart") then
+                        return obj:FindFirstChildOfClass("BasePart")
+                    end
+                end
+            end
         end
     end
+    
+    -- Fallback: Look for moving dynamic parts with high velocities if structural names are masked
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("BasePart") and obj.AssemblyLinearVelocity.Magnitude > 50 and obj.Size.X == obj.Size.Y then
+            return obj
+        end
+    end
+    
     return nil
 end
 
 local function StartParryTracking()
     if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
     
-    EngineState.ParryConnection = RunService.PostSimulation:Connect(function()
+    EngineState.ParryConnection = RunService.PreSimulation:Connect(function()
         if not EngineState.AutoParryActive then return end
         
         local character = LocalPlayer.Character
@@ -106,11 +126,18 @@ local function StartParryTracking()
         local ball = FindActiveBall()
         if ball then
             local distance = (ball.Position - rootPart.Position).Magnitude
-            local relativeVelocity = ball.AssemblyLinearVelocity - rootPart.AssemblyLinearVelocity
-            local isMovingToward = relativeVelocity:Dot(rootPart.Position - ball.Position) > 0
             
-            if isMovingToward and distance <= EngineState.ParryThreshold then
+            -- Direction vector calculations to ensure it's target locked onto your character position
+            local relativeVelocity = ball.AssemblyLinearVelocity - rootPart.AssemblyLinearVelocity
+            local toCharacter = (rootPart.Position - ball.Position).Unit
+            local isMovingToward = relativeVelocity.Unit:Dot(toCharacter) > 0.3 -- Generous angle allowance
+            
+            -- Dynamic scaling threshold based on how fast the target is approaching
+            local dynamicThreshold = EngineState.ParryThreshold + (ball.AssemblyLinearVelocity.Magnitude * 0.15)
+            
+            if isMovingToward and distance <= dynamicThreshold then
                 fireInput()
+                task.wait(0.05) -- Internal parry cool-down filter to prevent execution choking
             end
         end
     end)
@@ -154,7 +181,7 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 500, 0, 360)
 MainFrame.Position = UDim2.new(0.5, -250, 0.5, -210)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 3, 5) -- Deep Obsidian Wine
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 3, 5) 
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -167,7 +194,7 @@ TitleLabel.Size = UDim2.new(0, 460, 0, 40)
 TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -200)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "🎵 ｔｈｙｒｅｎ － ｅｎｇｉｎｅ ／ ｃｏｒｅ"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 60, 100) -- Hot Synth Pink/Red
+TitleLabel.TextColor3 = Color3.fromRGB(255, 60, 100) 
 TitleLabel.Font = Enum.Font.Code
 TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -178,7 +205,7 @@ TitleLabel.Parent = ConfigCanvas
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Size = UDim2.new(0, 215, 0, 42)
 ModeBtn.Position = UDim2.new(0.5, -230, 0.5, -150)
-ModeBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12) -- Dark Velvet Crimson Base
+ModeBtn.BackgroundColor3 = Color3.fromRGB(24, 7, 12) 
 ModeBtn.BorderSizePixel = 0
 ModeBtn.Text = "⚙️ Mode: Keyboard (KPS)"
 ModeBtn.TextColor3 = Color3.fromRGB(255, 210, 220)
@@ -206,7 +233,7 @@ ApplyRadius(GuardBtn, 6)
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 6)
 SliderTrack.Position = UDim2.new(0.5, -230, 0.5, -85)
-SliderTrack.BackgroundColor3 = Color3.fromRGB(45, 15, 22) -- Dull Dark Red Track
+SliderTrack.BackgroundColor3 = Color3.fromRGB(45, 15, 22) 
 SliderTrack.BorderSizePixel = 0
 SliderTrack.ZIndex = 5
 SliderTrack.Parent = ConfigCanvas
@@ -214,7 +241,7 @@ ApplyRadius(SliderTrack, 3)
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(230, 20, 60) -- Bright Neon Crimson Fill
+SliderFill.BackgroundColor3 = Color3.fromRGB(230, 20, 60) 
 SliderFill.BorderSizePixel = 0
 SliderFill.ZIndex = 6
 SliderFill.Parent = SliderTrack
@@ -330,10 +357,9 @@ ControlPod.BackgroundColor3 = Color3.fromRGB(10, 3, 5)
 ControlPod.BorderSizePixel = 0
 ControlPod.Active = true
 ControlPod.Draggable = true
-ControlPod.Parent = ScreenGui -- Parented directly to the screen layout so it never closes
+ControlPod.Parent = ScreenGui 
 ApplyRadius(ControlPod, 8)
 
--- Compact Operational Toggle Button
 local ActionButton = Instance.new("TextButton")
 ActionButton.Name = "ActionButton"
 ActionButton.Size = UDim2.new(0, 230, 0, 36)
@@ -346,10 +372,9 @@ ActionButton.Font = Enum.Font.SourceSansBold
 ActionButton.TextSize = 14
 ActionButton.AutoButtonColor = false
 ActionButton.ZIndex = 5
-ActionButton.Parent = ScreenGui -- Extracted safely from the auto-hide container loop
+ActionButton.Parent = ScreenGui 
 ApplyRadius(ActionButton, 6)
 
--- Standalone Operation Status Readout Line Footer
 local StatusBar = Instance.new("TextLabel")
 StatusBar.Size = UDim2.new(0, 230, 0, 18)
 StatusBar.Position = UDim2.new(0.5, -115, 0.5, 213)
@@ -360,6 +385,7 @@ StatusBar.Font = Enum.Font.SourceSans
 StatusBar.TextSize = 11
 StatusBar.ZIndex = 5
 StatusBar.Parent = ScreenGui
+
 -- -----------------------------------------------------------------------------
 -- RUNTIME UI HANDLER LOGIC
 -- -----------------------------------------------------------------------------
@@ -434,7 +460,6 @@ BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, GuardBtn, SliderTrack, Spee
 BindChassisPosition(ControlPod, {ActionButton, StatusBar})
 
 -- 6. KEYBOARD VISIBILITY INPUT BIND (RIGHT SHIFT)
--- Toggles only the ConfigCanvas box, leaving the core operations widget untouched
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
         EngineState.ConfigVisible = not EngineState.ConfigVisible
@@ -475,7 +500,6 @@ getgenv().ThyrenLowEndMode = function()
     UpdateUI()
 end
 
--- Wire UI buttons to internal states
 GuardBtn.MouseButton1Click:Connect(ThyrenLowEndMode)
 
 ParryBtn.MouseButton1Click:Connect(function()
