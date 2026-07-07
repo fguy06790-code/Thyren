@@ -1,5 +1,5 @@
 -- =============================================================================
--- THYREN DECOUPLED REPOSITORY DASHBOARD (BLAZE MACRO EDITION / GREEN MATRIX)
+-- THYREN DECOUPLED REPOSITORY DASHBOARD (BLAZE MACRO EDITION / HIDING ACTION BUTTON)
 -- TARGET: Roblox Executor Environment (Ultra-Accurate Asynchronous Spammer)
 -- LAYOUT: Deep Obsidian & Neon Green Aesthetics // Blade Precision Geometry
 -- TOGGLE: Press RIGHT SHIFT to toggle the settings panel while keeping workspace clean
@@ -201,14 +201,13 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 500, 0, 360)
 MainFrame.Position = UDim2.new(0.5, -250, 0.5, -210)
-MainFrame.BackgroundColor3 = Color3.fromRGB(5, 10, 6) -- Ultra Dark Emerald Background
+MainFrame.BackgroundColor3 = Color3.fromRGB(5, 10, 6) 
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ConfigCanvas
 ApplyRadius(MainFrame, 8)
 
--- Sharp Blaze Styled Border Glow effect
 local UIStroke = Instance.new("UIStroke")
 UIStroke.Color = Color3.fromRGB(0, 200, 90)
 UIStroke.Thickness = 1
@@ -220,7 +219,7 @@ TitleLabel.Size = UDim2.new(0, 460, 0, 40)
 TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -200)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "⚡ ｂｌａｚｅ － ｍａｃｒｏ ／ ｃｏｒｅ v2.0"
-TitleLabel.TextColor3 = Color3.fromRGB(0, 255, 120) -- Toxic Neon Green
+TitleLabel.TextColor3 = Color3.fromRGB(0, 255, 120) 
 TitleLabel.Font = Enum.Font.Code
 TitleLabel.TextSize = 14
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -275,7 +274,7 @@ ApplyRadius(SliderTrack, 3)
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 120) -- Blaze Green Slider
+SliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 120) 
 SliderFill.BorderSizePixel = 0
 SliderFill.ZIndex = 6
 SliderFill.Parent = SliderTrack
@@ -437,7 +436,7 @@ local function UpdateUI()
     local labelMode = EngineState.ModeSelection == "KPS" and "KPS" or "CPS"
     SpeedDisplay.Text = string.format("%d %s", EngineState.TargetSpeed, labelMode)
     
-    -- Dynamically handle Visibility of the control pod container based on activation profile
+    -- FORCE THE ENTIRE MANUAL INTERACTION POD STACK TO DISAPPEAR/REAPPEAR
     if EngineState.ActivationMode == "Manual Spam" then
         ControlPod.Visible = true
         ActionButton.Visible = true
@@ -452,7 +451,7 @@ local function UpdateUI()
         StatusBar.Text = "Status: Macro Firing"
         StatusBar.TextColor3 = Color3.fromRGB(0, 255, 120)
         ActionButton.Text = "■ Stop Macro"
-        ActionButton.BackgroundColor3 = Color3.fromRGB(150, 10, 30) -- Red warning stop color
+        ActionButton.BackgroundColor3 = Color3.fromRGB(150, 10, 30) 
         DiagMacroLabel.Text = "● Engine Status: Running Core Tasks"
         DiagMacroLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
     else
@@ -516,7 +515,6 @@ BindChassisPosition(ControlPod, {ActionButton, StatusBar})
 
 -- 6. KEYBOARD GLOBAL INTERCEPT LISTENER
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    -- Handle Key Capture Mode (When user is assigning a brand new hotkey)
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode ~= Enum.KeyCode.RightShift then
             EngineState.RuntimeHotkey = input.KeyCode
@@ -531,13 +529,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
     if gameProcessed then return end
     
-    -- Right Shift window presentation visibility management
     if input.KeyCode == Enum.KeyCode.RightShift then
         EngineState.ConfigVisible = not EngineState.ConfigVisible
         ConfigCanvas.Visible = EngineState.ConfigVisible
     end
     
-    -- Bound hotkey activation evaluation
     if EngineState.RuntimeHotkey and input.KeyCode == EngineState.RuntimeHotkey then
         ToggleEngine()
         UpdateUI()
@@ -562,6 +558,11 @@ ControlModeBtn.MouseButton1Click:Connect(function()
         EngineState.IsBinding = true
         ControlModeBtn.Text = "🕹️ Press any key..."
         ControlModeBtn.TextColor3 = Color3.fromRGB(255, 255, 100)
+        
+        -- Hide the manual trigger buttons right as the key capture starts
+        ControlPod.Visible = false
+        ActionButton.Visible = false
+        StatusBar.Visible = false
     else
         EngineState.ActivationMode = "Manual Spam"
         EngineState.RuntimeHotkey = nil
