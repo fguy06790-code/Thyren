@@ -1,10 +1,7 @@
 -- =============================================================================
--- THYREN REPOSITORY DASHBOARD (BLADE BALL OPTIMIZED - NO PARRY COOLDOWN)
--- TARGET: Roblox Executor Environment
+-- THYREN REPOSITORY DASHBOARD (BLADE BALL - FIXED VISIBILITY)
 -- =============================================================================
 
-local uiName = "ThyrenUI"
-local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -12,14 +9,31 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- 1. PURGE PREVIOUS INSTANCES
-pcall(function() local oldUI = CoreGui:FindFirstChild(uiName) if oldUI then oldUI:Destroy() end end)
-pcall(function() if LocalPlayer then local pGui = LocalPlayer:FindFirstChild("PlayerGui") local oldUI = pGui and pGui:FindFirstChild(uiName) if oldUI then oldUI:Destroy() end end end)
+local uiName = "ThyrenUI"
 
--- 2. ALLOCATE SECURE STORAGE
-local TargetParent = nil
-local successCore = pcall(function() local test = Instance.new("Folder"); test.Parent = CoreGui; test:Destroy(); TargetParent = CoreGui end)
-if not successCore or not TargetParent then TargetParent = LocalPlayer:WaitForChild("PlayerGui") end
+-- Destroy any existing instance first
+if game.CoreGui:FindFirstChild(uiName) then
+    game.CoreGui:FindFirstChild(uiName):Destroy()
+end
+if LocalPlayer.PlayerGui:FindFirstChild(uiName) then
+    LocalPlayer.PlayerGui:FindFirstChild(uiName):Destroy()
+end
+
+-- Force create in PlayerGui (most reliable across executors)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = uiName
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.DisplayOrder = 999
+ScreenGui.Enabled = true
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Verify it exists
+if not ScreenGui.Parent then
+    -- Fallback to CoreGui
+    ScreenGui.Parent = game:GetService("CoreGui")
+end
 
 -- 3. UNIFIED CONFIGURATION STATE
 local EngineState = {
@@ -46,7 +60,6 @@ local getMouseLocation = UserInputService.GetMouseLocation
 local osClock = os.clock
 local clamp = math.clamp
 local round = math.round
-local ipairs = ipairs
 local sqrt = math.sqrt
 
 local MacroConnection = nil
@@ -122,7 +135,7 @@ local function FindActiveBall()
     lastBallCheck = currentTime
     local playerName = LocalPlayer.Name
     
-    for _, obj in ipairs(workspace:GetChildren()) do
+    for _, obj in pairs(workspace:GetChildren()) do
         if obj:IsA("BasePart") and (obj.Name:lower() == "ball" or obj.Name:lower() == "sphereball") then
             local target = obj:GetAttribute("target")
             if not target then target = obj:GetAttribute("Target") end
@@ -145,7 +158,7 @@ local function FindActiveBall()
     
     local ballFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("Projectiles")
     if ballFolder then
-        for _, obj in ipairs(ballFolder:GetChildren()) do
+        for _, obj in pairs(ballFolder:GetChildren()) do
             if obj:IsA("BasePart") then
                 local target = obj:GetAttribute("target") or obj:GetAttribute("Target")
                 if not target then
@@ -162,7 +175,7 @@ local function FindActiveBall()
         end
     end
     
-    for _, obj in ipairs(workspace:GetDescendants()) do
+    for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and (obj.Name:lower():find("ball") or obj.Name:lower():find("projectile")) then
             local target = obj:GetAttribute("target") or obj:GetAttribute("Target")
             if target == nil or target == playerName then
@@ -200,7 +213,6 @@ local function GetTimeToImpact(ball, characterRoot)
     return distance / (velDot / distance)
 end
 
--- NO COOLDOWN - fires every single frame when conditions met
 local function StartParryTracking()
     if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
     
@@ -242,7 +254,6 @@ local function StartParryTracking()
         end
         
         if shouldParry then
-            -- Fire immediately, no cooldown check
             sendKeyEvent(VirtualInputManager, true, Enum.KeyCode.Space, false, game)
             task.delay(0.03, function()
                 sendKeyEvent(VirtualInputManager, false, Enum.KeyCode.Space, false, game)
@@ -284,8 +295,6 @@ local Colors = {
     BorderMedium = Color3.fromRGB(80, 80, 95),
     BorderHighlight = Color3.fromRGB(100, 100, 120),
     ShadowDark = Color3.fromRGB(8, 8, 10),
-    ShadowMedium = Color3.fromRGB(12, 12, 15),
-    ShadowLight = Color3.fromRGB(18, 18, 22),
     ActiveGlow = Color3.fromRGB(150, 150, 170),
     ActiveText = Color3.fromRGB(200, 200, 215),
     SuccessGreen = Color3.fromRGB(80, 180, 100),
@@ -299,7 +308,7 @@ local function ApplyRadius(instance, radius)
     return corner
 end
 
-local function CreateShadow(parent, sizeOffset, positionOffset, shadowColor, blurSize)
+local function CreateShadow(parent, sizeOffset, positionOffset, shadowColor)
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.Size = parent.Size + UDim2.new(sizeOffset.X, sizeOffset.Y, sizeOffset.X, sizeOffset.Y)
@@ -427,6 +436,7 @@ local function CreateDepthPanel(properties)
     panel.Position = properties.Position or UDim2.new(0, 0, 0, 0)
     panel.BackgroundColor3 = properties.Color or Colors.Surface
     panel.ZIndex = properties.ZIndex or 1
+    panel.Visible = true
     panel.Parent = properties.Parent
     ApplyRadius(panel, properties.Radius or 8)
     
@@ -453,17 +463,15 @@ local function CreateDepthPanel(properties)
 end
 
 -- =============================================================================
--- 6. INTERFACE ARCHITECTURE (BLADE BALL EDITION)
+-- 6. INTERFACE ARCHITECTURE
 -- =============================================================================
 
-local ScreenGui = Instance.new("ScreenGui", TargetParent)
-ScreenGui.Name = uiName
-ScreenGui.ResetOnSpawn = false
-
-local ConfigCanvas = Instance.new("Frame", ScreenGui)
+local ConfigCanvas = Instance.new("Frame")
 ConfigCanvas.Name = "ConfigCanvas"
 ConfigCanvas.Size = UDim2.new(1, 0, 1, 0)
 ConfigCanvas.BackgroundTransparency = 1
+ConfigCanvas.Visible = true
+ConfigCanvas.Parent = ScreenGui
 
 local MainFrame = CreateDepthPanel({
     Name = "MainFrame",
@@ -484,16 +492,17 @@ local MainFrame = CreateDepthPanel({
 MainFrame.Active = true
 MainFrame.Draggable = true
 
-local InnerContent = Instance.new("Frame", MainFrame)
+local InnerContent = Instance.new("Frame")
 InnerContent.Name = "InnerContent"
 InnerContent.Size = UDim2.new(1, -8, 1, -8)
 InnerContent.Position = UDim2.new(0, 4, 0, 4)
 InnerContent.BackgroundTransparency = 1
 InnerContent.ZIndex = 2
+InnerContent.Parent = MainFrame
 
 CreateInnerBorder(MainFrame, Color3.fromRGB(10, 10, 12), 0.6)
 
-local TitleLabel = Instance.new("TextButton", ConfigCanvas)
+local TitleLabel = Instance.new("TextButton")
 TitleLabel.Name = "LogoButton"
 TitleLabel.Size = UDim2.new(0, 160, 0, 40)
 TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -220)
@@ -504,8 +513,10 @@ TitleLabel.Font = Enum.Font.Michroma
 TitleLabel.TextSize = 16
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.ZIndex = 5
+TitleLabel.Visible = true
+TitleLabel.Parent = ConfigCanvas
 
-local LogoShadow = Instance.new("TextLabel", ConfigCanvas)
+local LogoShadow = Instance.new("TextLabel")
 LogoShadow.Name = "LogoShadow"
 LogoShadow.Size = UDim2.new(0, 160, 0, 40)
 LogoShadow.Position = UDim2.new(0.5, -229, 0.5, -219)
@@ -517,8 +528,10 @@ LogoShadow.TextSize = 16
 LogoShadow.TextXAlignment = Enum.TextXAlignment.Left
 LogoShadow.TextTransparency = 0.5
 LogoShadow.ZIndex = 4
+LogoShadow.Visible = true
+LogoShadow.Parent = ConfigCanvas
 
-local GameLabel = Instance.new("TextLabel", ConfigCanvas)
+local GameLabel = Instance.new("TextLabel")
 GameLabel.Size = UDim2.new(0, 120, 0, 20)
 GameLabel.Position = UDim2.new(0.5, -40, 0.5, -215)
 GameLabel.BackgroundTransparency = 1
@@ -527,8 +540,10 @@ GameLabel.TextColor3 = Colors.TextMuted
 GameLabel.Font = Enum.Font.Michroma
 GameLabel.TextSize = 10
 GameLabel.ZIndex = 5
+GameLabel.Visible = true
+GameLabel.Parent = ConfigCanvas
 
-local ModeBtn = Instance.new("TextButton", ConfigCanvas)
+local ModeBtn = Instance.new("TextButton")
 ModeBtn.Size = UDim2.new(0, 215, 0, 42)
 ModeBtn.Position = UDim2.new(0.5, -230, 0.5, -170)
 ModeBtn.BackgroundColor3 = Colors.Interactive
@@ -536,6 +551,8 @@ ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Colors.TextPrimary
 ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.ZIndex = 5
+ModeBtn.Visible = true
+ModeBtn.Parent = ConfigCanvas
 ApplyRadius(ModeBtn, 6)
 CreateOuterBorder(ModeBtn, Colors.BorderMedium, 1)
 CreateTopHighlight(ModeBtn)
@@ -543,18 +560,20 @@ CreateBottomShadow(ModeBtn)
 CreateDepthGradient(ModeBtn, 180)
 AddHoverEffect(ModeBtn, Colors.Interactive, Colors.InteractiveHover, Colors.InteractivePressed)
 
-local SwitchContainer = Instance.new("Frame", ConfigCanvas)
+local SwitchContainer = Instance.new("Frame")
 SwitchContainer.Size = UDim2.new(0, 215, 0, 42)
 SwitchContainer.Position = UDim2.new(0.5, 15, 0.5, -170)
 SwitchContainer.BackgroundColor3 = Colors.Interactive
 SwitchContainer.ZIndex = 5
+SwitchContainer.Visible = true
+SwitchContainer.Parent = ConfigCanvas
 ApplyRadius(SwitchContainer, 6)
 CreateOuterBorder(SwitchContainer, Colors.BorderMedium, 1)
 CreateTopHighlight(SwitchContainer)
 CreateBottomShadow(SwitchContainer)
 CreateDepthGradient(SwitchContainer, 180)
 
-local SwitchLabel = Instance.new("TextLabel", SwitchContainer)
+local SwitchLabel = Instance.new("TextLabel")
 SwitchLabel.Size = UDim2.new(0, 140, 1, 0)
 SwitchLabel.Position = UDim2.new(0, 12, 0, 0)
 SwitchLabel.BackgroundTransparency = 1
@@ -562,62 +581,71 @@ SwitchLabel.Text = "KEYBIND"
 SwitchLabel.TextColor3 = Colors.TextPrimary
 SwitchLabel.Font = Enum.Font.Michroma
 SwitchLabel.ZIndex = 6
+SwitchLabel.Parent = SwitchContainer
 
-local ToggleTrack = Instance.new("TextButton", SwitchContainer)
+local ToggleTrack = Instance.new("TextButton")
 ToggleTrack.Size = UDim2.new(0, 46, 0, 26)
 ToggleTrack.Position = UDim2.new(1, -56, 0.5, -13)
 ToggleTrack.BackgroundColor3 = Colors.ToggleOff
 ToggleTrack.Text = ""
 ToggleTrack.ZIndex = 6
+ToggleTrack.Parent = SwitchContainer
 ApplyRadius(ToggleTrack, 13)
 CreateInnerBorder(ToggleTrack, Color3.fromRGB(20, 20, 25), 0.4)
 CreateDepthGradient(ToggleTrack, 180)
 
-local ToggleThumb = Instance.new("Frame", ToggleTrack)
+local ToggleThumb = Instance.new("Frame")
 ToggleThumb.Size = UDim2.new(0, 22, 0, 22)
 ToggleThumb.Position = UDim2.new(0, 2, 0.5, -11)
 ToggleThumb.BackgroundColor3 = Colors.ToggleThumb
 ToggleThumb.ZIndex = 7
+ToggleThumb.Parent = ToggleTrack
 ApplyRadius(ToggleThumb, 11)
 
-local ThumbHighlight = Instance.new("Frame", ToggleThumb)
+local ThumbHighlight = Instance.new("Frame")
 ThumbHighlight.Size = UDim2.new(1, -4, 0, 8)
 ThumbHighlight.Position = UDim2.new(0, 2, 0, 1)
 ThumbHighlight.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 ThumbHighlight.BackgroundTransparency = 0.75
 ThumbHighlight.ZIndex = 8
+ThumbHighlight.Parent = ToggleThumb
 ApplyRadius(ThumbHighlight, 4)
 
-local SliderTrack = Instance.new("Frame", ConfigCanvas)
+local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(0, 340, 0, 8)
 SliderTrack.Position = UDim2.new(0.5, -230, 0.5, -105)
 SliderTrack.BackgroundColor3 = Colors.TrackBackground
 SliderTrack.ZIndex = 5
+SliderTrack.Visible = true
+SliderTrack.Parent = ConfigCanvas
 ApplyRadius(SliderTrack, 4)
 CreateInnerBorder(SliderTrack, Color3.fromRGB(15, 15, 18), 0.3)
 
-local SliderFill = Instance.new("Frame", SliderTrack)
+local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
 SliderFill.BackgroundColor3 = Colors.TrackFill
 SliderFill.ZIndex = 6
+SliderFill.Parent = SliderTrack
 ApplyRadius(SliderFill, 4)
 CreateDepthGradient(SliderFill, 90)
 
-local SliderButton = Instance.new("TextButton", SliderTrack)
+local SliderButton = Instance.new("TextButton")
 SliderButton.Size = UDim2.new(0, 16, 0, 16)
 SliderButton.Position = UDim2.new(0.01, -8, 0.5, -8)
 SliderButton.BackgroundColor3 = Colors.TrackThumb
 SliderButton.Text = ""
 SliderButton.ZIndex = 7
+SliderButton.Parent = SliderTrack
 ApplyRadius(SliderButton, 8)
 CreateOuterBorder(SliderButton, Color3.fromRGB(200, 200, 210), 1)
 
-local SliderThumbHighlight = Instance.new("Frame", SliderButton)
+local SliderThumbHighlight = Instance.new("Frame")
 SliderThumbHighlight.Size = UDim2.new(1, -4, 0, 5)
 SliderThumbHighlight.Position = UDim2.new(0, 2, 0, 1)
 SliderThumbHighlight.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 SliderThumbHighlight.BackgroundTransparency = 0.6
 SliderThumbHighlight.ZIndex = 8
+SliderThumbHighlight.Parent = SliderButton
 ApplyRadius(SliderThumbHighlight, 3)
 
 SliderButton.MouseEnter:Connect(function()
@@ -627,7 +655,7 @@ SliderButton.MouseLeave:Connect(function()
     TweenService:Create(SliderButton, TweenInfo.new(0.15), {BackgroundColor3 = Colors.TrackThumb}):Play()
 end)
 
-local SpeedDisplay = Instance.new("TextLabel", ConfigCanvas)
+local SpeedDisplay = Instance.new("TextLabel")
 SpeedDisplay.Size = UDim2.new(0, 120, 0, 30)
 SpeedDisplay.Position = UDim2.new(0.5, 110, 0.5, -117)
 SpeedDisplay.BackgroundTransparency = 1
@@ -636,8 +664,10 @@ SpeedDisplay.TextColor3 = Colors.TextSecondary
 SpeedDisplay.Font = Enum.Font.Michroma
 SpeedDisplay.TextSize = 14
 SpeedDisplay.ZIndex = 5
+SpeedDisplay.Visible = true
+SpeedDisplay.Parent = ConfigCanvas
 
-local SpeedShadow = Instance.new("TextLabel", ConfigCanvas)
+local SpeedShadow = Instance.new("TextLabel")
 SpeedShadow.Size = UDim2.new(0, 120, 0, 30)
 SpeedShadow.Position = UDim2.new(0.5, 111, 0.5, -116)
 SpeedShadow.BackgroundTransparency = 1
@@ -647,8 +677,10 @@ SpeedShadow.Font = Enum.Font.Michroma
 SpeedShadow.TextSize = 14
 SpeedShadow.TextTransparency = 0.6
 SpeedShadow.ZIndex = 4
+SpeedShadow.Visible = true
+SpeedShadow.Parent = ConfigCanvas
 
-local ParryBtn = Instance.new("TextButton", ConfigCanvas)
+local ParryBtn = Instance.new("TextButton")
 ParryBtn.Size = UDim2.new(0, 460, 0, 40)
 ParryBtn.Position = UDim2.new(0.5, -230, 0.5, -75)
 ParryBtn.BackgroundColor3 = Colors.Interactive
@@ -656,6 +688,8 @@ ParryBtn.Text = "AUTO PARRY: DISABLED"
 ParryBtn.TextColor3 = Colors.TextMuted
 ParryBtn.Font = Enum.Font.Michroma
 ParryBtn.ZIndex = 5
+ParryBtn.Visible = true
+ParryBtn.Parent = ConfigCanvas
 ApplyRadius(ParryBtn, 6)
 CreateOuterBorder(ParryBtn, Colors.BorderMedium, 1)
 CreateTopHighlight(ParryBtn)
@@ -663,7 +697,7 @@ CreateBottomShadow(ParryBtn)
 CreateDepthGradient(ParryBtn, 180)
 AddHoverEffect(ParryBtn, Colors.Interactive, Colors.InteractiveHover, Colors.InteractivePressed)
 
-local PredictBtn = Instance.new("TextButton", ConfigCanvas)
+local PredictBtn = Instance.new("TextButton")
 PredictBtn.Size = UDim2.new(0, 220, 0, 36)
 PredictBtn.Position = UDim2.new(0.5, -230, 0.5, -25)
 PredictBtn.BackgroundColor3 = Colors.Interactive
@@ -672,13 +706,15 @@ PredictBtn.TextColor3 = Colors.SuccessGreen
 PredictBtn.Font = Enum.Font.Michroma
 PredictBtn.TextSize = 11
 PredictBtn.ZIndex = 5
+PredictBtn.Visible = true
+PredictBtn.Parent = ConfigCanvas
 ApplyRadius(PredictBtn, 6)
 CreateOuterBorder(PredictBtn, Colors.BorderMedium, 1)
 CreateTopHighlight(PredictBtn)
 CreateBottomShadow(PredictBtn)
 AddHoverEffect(PredictBtn, Colors.Interactive, Colors.InteractiveHover, Colors.InteractivePressed)
 
-local ThreshLabel = Instance.new("TextLabel", ConfigCanvas)
+local ThreshLabel = Instance.new("TextLabel")
 ThreshLabel.Size = UDim2.new(0, 100, 0, 20)
 ThreshLabel.Position = UDim2.new(0.5, 10, 0.5, -30)
 ThreshLabel.BackgroundTransparency = 1
@@ -687,47 +723,56 @@ ThreshLabel.TextColor3 = Colors.TextMuted
 ThreshLabel.Font = Enum.Font.Michroma
 ThreshLabel.TextSize = 10
 ThreshLabel.ZIndex = 5
+ThreshLabel.Visible = true
+ThreshLabel.Parent = ConfigCanvas
 
-local ThreshSliderTrack = Instance.new("Frame", ConfigCanvas)
+local ThreshSliderTrack = Instance.new("Frame")
 ThreshSliderTrack.Size = UDim2.new(0, 200, 0, 6)
 ThreshSliderTrack.Position = UDim2.new(0.5, 10, 0.5, -8)
 ThreshSliderTrack.BackgroundColor3 = Colors.TrackBackground
 ThreshSliderTrack.ZIndex = 5
+ThreshSliderTrack.Visible = true
+ThreshSliderTrack.Parent = ConfigCanvas
 ApplyRadius(ThreshSliderTrack, 3)
 CreateInnerBorder(ThreshSliderTrack, Color3.fromRGB(15, 15, 18), 0.3)
 
-local ThreshSliderFill = Instance.new("Frame", ThreshSliderTrack)
+local ThreshSliderFill = Instance.new("Frame")
 ThreshSliderFill.Size = UDim2.new(0.28, 0, 1, 0)
 ThreshSliderFill.BackgroundColor3 = Colors.TrackFill
 ThreshSliderFill.ZIndex = 6
+ThreshSliderFill.Parent = ThreshSliderTrack
 ApplyRadius(ThreshSliderFill, 3)
 
-local ThreshSliderButton = Instance.new("TextButton", ThreshSliderTrack)
+local ThreshSliderButton = Instance.new("TextButton")
 ThreshSliderButton.Size = UDim2.new(0, 14, 0, 14)
 ThreshSliderButton.Position = UDim2.new(0.28, -7, 0.5, -7)
 ThreshSliderButton.BackgroundColor3 = Colors.TrackThumb
 ThreshSliderButton.Text = ""
 ThreshSliderButton.ZIndex = 7
+ThreshSliderButton.Parent = ThreshSliderTrack
 ApplyRadius(ThreshSliderButton, 7)
 
-local DiagPanel = Instance.new("Frame", ConfigCanvas)
+local DiagPanel = Instance.new("Frame")
 DiagPanel.Size = UDim2.new(0, 460, 0, 130)
 DiagPanel.Position = UDim2.new(0.5, -230, 0.5, 10)
 DiagPanel.BackgroundColor3 = Colors.SurfaceRaised
 DiagPanel.ZIndex = 4
+DiagPanel.Visible = true
+DiagPanel.Parent = ConfigCanvas
 ApplyRadius(DiagPanel, 6)
 CreateOuterBorder(DiagPanel, Colors.BorderSubtle, 1)
 CreateInnerBorder(DiagPanel, Color3.fromRGB(15, 15, 18), 0.5)
 CreateDepthGradient(DiagPanel, 180)
 
-local DiagHeader = Instance.new("Frame", DiagPanel)
+local DiagHeader = Instance.new("Frame")
 DiagHeader.Size = UDim2.new(1, -16, 0, 1)
 DiagHeader.Position = UDim2.new(0, 8, 0, 22)
 DiagHeader.BackgroundColor3 = Colors.BorderSubtle
 DiagHeader.BackgroundTransparency = 0.5
 DiagHeader.ZIndex = 5
+DiagHeader.Parent = DiagPanel
 
-local DiagHeaderLabel = Instance.new("TextLabel", DiagPanel)
+local DiagHeaderLabel = Instance.new("TextLabel")
 DiagHeaderLabel.Size = UDim2.new(0, 100, 0, 20)
 DiagHeaderLabel.Position = UDim2.new(0, 12, 0, 8)
 DiagHeaderLabel.BackgroundTransparency = 1
@@ -737,8 +782,9 @@ DiagHeaderLabel.Font = Enum.Font.Michroma
 DiagHeaderLabel.TextSize = 9
 DiagHeaderLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagHeaderLabel.ZIndex = 5
+DiagHeaderLabel.Parent = DiagPanel
 
-local DiagMacroLabel = Instance.new("TextLabel", DiagPanel)
+local DiagMacroLabel = Instance.new("TextLabel")
 DiagMacroLabel.Size = UDim2.new(1, -30, 0, 18)
 DiagMacroLabel.Position = UDim2.new(0, 15, 0, 35)
 DiagMacroLabel.BackgroundTransparency = 1
@@ -748,8 +794,9 @@ DiagMacroLabel.Font = Enum.Font.Michroma
 DiagMacroLabel.TextSize = 10
 DiagMacroLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagMacroLabel.ZIndex = 5
+DiagMacroLabel.Parent = DiagPanel
 
-local DiagKeyLabel = Instance.new("TextLabel", DiagPanel)
+local DiagKeyLabel = Instance.new("TextLabel")
 DiagKeyLabel.Size = UDim2.new(1, -30, 0, 18)
 DiagKeyLabel.Position = UDim2.new(0, 15, 0, 53)
 DiagKeyLabel.BackgroundTransparency = 1
@@ -759,8 +806,9 @@ DiagKeyLabel.Font = Enum.Font.Michroma
 DiagKeyLabel.TextSize = 10
 DiagKeyLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagKeyLabel.ZIndex = 5
+DiagKeyLabel.Parent = DiagPanel
 
-local DiagParryLabel = Instance.new("TextLabel", DiagPanel)
+local DiagParryLabel = Instance.new("TextLabel")
 DiagParryLabel.Size = UDim2.new(1, -30, 0, 18)
 DiagParryLabel.Position = UDim2.new(0, 15, 0, 71)
 DiagParryLabel.BackgroundTransparency = 1
@@ -770,8 +818,9 @@ DiagParryLabel.Font = Enum.Font.Michroma
 DiagParryLabel.TextSize = 10
 DiagParryLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagParryLabel.ZIndex = 5
+DiagParryLabel.Parent = DiagPanel
 
-local DiagBallLabel = Instance.new("TextLabel", DiagPanel)
+local DiagBallLabel = Instance.new("TextLabel")
 DiagBallLabel.Size = UDim2.new(1, -30, 0, 18)
 DiagBallLabel.Position = UDim2.new(0, 15, 0, 89)
 DiagBallLabel.BackgroundTransparency = 1
@@ -781,8 +830,9 @@ DiagBallLabel.Font = Enum.Font.Michroma
 DiagBallLabel.TextSize = 10
 DiagBallLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagBallLabel.ZIndex = 5
+DiagBallLabel.Parent = DiagPanel
 
-local DiagSpeedLabel = Instance.new("TextLabel", DiagPanel)
+local DiagSpeedLabel = Instance.new("TextLabel")
 DiagSpeedLabel.Size = UDim2.new(1, -30, 0, 18)
 DiagSpeedLabel.Position = UDim2.new(0, 15, 0, 107)
 DiagSpeedLabel.BackgroundTransparency = 1
@@ -792,13 +842,15 @@ DiagSpeedLabel.Font = Enum.Font.Michroma
 DiagSpeedLabel.TextSize = 10
 DiagSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiagSpeedLabel.ZIndex = 5
+DiagSpeedLabel.Parent = DiagPanel
 
 local function CreateStatusDot(parent, xPos, yPos, zIndex)
-    local dot = Instance.new("Frame", parent)
+    local dot = Instance.new("Frame")
     dot.Size = UDim2.new(0, 6, 0, 6)
     dot.Position = UDim2.new(0, xPos, 0, yPos)
     dot.BackgroundColor3 = Colors.TextMuted
     dot.ZIndex = zIndex or 6
+    dot.Parent = parent
     ApplyRadius(dot, 3)
     return dot
 end
@@ -828,7 +880,7 @@ ControlPod.Active = true
 ControlPod.Draggable = true
 CreateInnerBorder(ControlPod, Color3.fromRGB(10, 10, 12), 0.5)
 
-local ActionButton = Instance.new("TextButton", ScreenGui)
+local ActionButton = Instance.new("TextButton")
 ActionButton.Size = UDim2.new(0, 230, 0, 38)
 ActionButton.Position = UDim2.new(0.5, -115, 0.5, 194)
 ActionButton.BackgroundColor3 = Colors.SurfaceOverlay
@@ -837,13 +889,15 @@ ActionButton.TextColor3 = Colors.TextPrimary
 ActionButton.Font = Enum.Font.Michroma
 ActionButton.TextSize = 13
 ActionButton.ZIndex = 5
+ActionButton.Visible = true
+ActionButton.Parent = ScreenGui
 ApplyRadius(ActionButton, 6)
 CreateOuterBorder(ActionButton, Colors.BorderMedium, 1)
 CreateTopHighlight(ActionButton)
 CreateBottomShadow(ActionButton)
 CreateDepthGradient(ActionButton, 180)
 
-local ActionTextShadow = Instance.new("TextLabel", ScreenGui)
+local ActionTextShadow = Instance.new("TextLabel")
 ActionTextShadow.Size = UDim2.new(0, 230, 0, 38)
 ActionTextShadow.Position = UDim2.new(0.5, -114, 0.5, 195)
 ActionTextShadow.BackgroundTransparency = 1
@@ -853,10 +907,12 @@ ActionTextShadow.Font = Enum.Font.Michroma
 ActionTextShadow.TextSize = 13
 ActionTextShadow.TextTransparency = 0.6
 ActionTextShadow.ZIndex = 4
+ActionTextShadow.Visible = true
+ActionTextShadow.Parent = ScreenGui
 
 AddHoverEffect(ActionButton, Colors.SurfaceOverlay, Colors.InteractiveHover, Colors.InteractivePressed)
 
-local StatusBar = Instance.new("TextLabel", ScreenGui)
+local StatusBar = Instance.new("TextLabel")
 StatusBar.Size = UDim2.new(0, 230, 0, 18)
 StatusBar.Position = UDim2.new(0.5, -115, 0.5, 235)
 StatusBar.BackgroundTransparency = 1
@@ -865,6 +921,8 @@ StatusBar.TextColor3 = Colors.TextMuted
 StatusBar.Font = Enum.Font.Michroma
 StatusBar.TextSize = 10
 StatusBar.ZIndex = 5
+StatusBar.Visible = true
+StatusBar.Parent = ScreenGui
 
 -- =============================================================================
 -- 7. SIGNAL HANDLING & EVENTS
@@ -1007,13 +1065,15 @@ end)
 
 local function BindChassisPosition(chassisFrame, elementList)
     local offsets = {}
-    for _, el in ipairs(elementList) do
+    for _, el in pairs(elementList) do
         offsets[el] = el.Position - chassisFrame.Position
     end
     chassisFrame:GetPropertyChangedSignal("Position"):Connect(function()
         local basePos = chassisFrame.Position
         for el, originalOffset in pairs(offsets) do
-            el.Position = basePos + originalOffset
+            if el and el.Parent then
+                el.Position = basePos + originalOffset
+            end
         end
     end)
 end
