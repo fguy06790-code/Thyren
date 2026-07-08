@@ -1,8 +1,8 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
     ║                    THYREN - BLADE BALL                         ║
-    ║            Maximum Anti-Detection System v2.3                 ║
-    ║     [HITS F KEY - SMALL DRAGGABLE ACTIVATE - 2500 MAX]        ║
+    ║            Maximum Anti-Detection System v2.4                 ║
+    ║       [PURE VIM RAW INPUT - BYPASSES EXECUTOR HID LIMITS]     ║
     ╚══════════════════════════════════════════════════════════════════╝
 --]]
 
@@ -69,12 +69,11 @@ local State = {
     VizEnabled = true, VizActive = false, Visible = true,
 }
 local Connections = {}
-local LastFireTime = 0
 local CachedBall = nil
 local LastBallCheckTime = 0
 
 --------------------------------------------------------------------------------
--- ANTI-DETECTION SYSTEM
+-- ANTI-DETECTION SYSTEM (Humanized - Used ONLY for Auto Parry)
 --------------------------------------------------------------------------------
 local AntiDetect = {
     ParryHistory = {}, MaxHistorySize = 30, LastParryTime = 0,
@@ -145,7 +144,7 @@ local function ResetStreak()
 end
 
 --------------------------------------------------------------------------------
--- HID EMULATION SYSTEM
+-- HID SYSTEM (Used ONLY by Auto Parry for anti-detection)
 --------------------------------------------------------------------------------
 local HID = { Method = "VirtualInput", PressCount = 0, ReleaseCount = 0, LastInputTime = 0 }
 
@@ -153,11 +152,10 @@ local function InitializeHID()
     if Env.HasKeypress then
         HID.Method = "keypress"
         HID.Press = function(keyCode)
-            local keyName = keyCode.Name
             HID.PressCount = HID.PressCount + 1; HID.LastInputTime = os.clock()
             pcall(function()
-                keypress(keyName)
-                task.delay(GetHumanDelay(), function() keyrelease(keyName); HID.ReleaseCount = HID.ReleaseCount + 1 end)
+                keypress(keyCode.Name)
+                task.delay(GetHumanDelay(), function() keyrelease(keyCode.Name); HID.ReleaseCount = HID.ReleaseCount + 1 end)
             end)
         end
         return
@@ -183,22 +181,6 @@ local function InitializeHID()
     end
 end
 
-local function MousePress()
-    HID.PressCount = HID.PressCount + 1; HID.LastInputTime = os.clock()
-    if Env.HasMouse1Press then
-        pcall(function()
-            mouse1press()
-            task.delay(GetHumanDelay(), function() mouse1release(); HID.ReleaseCount = HID.ReleaseCount + 1 end)
-        end)
-    else
-        local m = UserInputService:GetMouseLocation()
-        pcall(function()
-            VirtualInputManager:SendMouseButtonEvent(m.X, m.Y, 0, true, game, 0)
-            task.delay(GetHumanDelay(), function() VirtualInputManager:SendMouseButtonEvent(m.X, m.Y, 0, false, game, 0); HID.ReleaseCount = HID.ReleaseCount + 1 end)
-        end)
-    end
-end
-
 InitializeHID()
 
 local function HumanParry()
@@ -206,7 +188,7 @@ local function HumanParry()
     local delay = GetAdaptiveDelay()
     task.delay(delay, function()
         if not State.AutoParry then return end
-        HID.Press(Enum.KeyCode.Space) -- Auto Parry still uses Space
+        HID.Press(Enum.KeyCode.Space)
         RecordParryTiming()
     end)
 end
@@ -322,29 +304,39 @@ end
 
 --------------------------------------------------------------------------------
 -- MACRO & AUTO PARRY LOGIC
+-- MACRO USES 100% PURE VIRTUAL INPUT MANAGER (NO EXECUTOR HID QUIRKS)
 --------------------------------------------------------------------------------
-local function ExecuteMacroInput()
-    if State.Mode == "KPS" then
-        HID.Press(Enum.KeyCode.F) -- CHANGED TO F KEY
-    else
-        MousePress()
-    end
-end
-
 local function MacroTick()
     if not State.Running then return end
-    local currentTime = os.clock()
-    if State.Speed >= 60 then
-        ExecuteMacroInput(); ExecuteMacroInput()
-    elseif (currentTime - LastFireTime) >= (1 / State.Speed) then
-        LastFireTime = currentTime; ExecuteMacroInput()
+    
+    -- Calculate how many times to fire THIS EXACT FRAME to hit the target KPS
+    -- Roblox caps at 60fps, so we divide by 60. 
+    local pressesThisFrame = math.ceil(State.Speed / 60)
+    
+    if State.Mode == "KPS" then
+        -- PURE RAW VIM F KEY SPAM
+        for i = 1, pressesThisFrame do
+            pcall(function()
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+            end)
+        end
+    else
+        -- PURE RAW VIM MOUSE CLICK SPAM
+        local m = UserInputService:GetMouseLocation()
+        for i = 1, pressesThisFrame do
+            pcall(function()
+                VirtualInputManager:SendMouseButtonEvent(m.X, m.Y, 0, true, game, 0)
+                VirtualInputManager:SendMouseButtonEvent(m.X, m.Y, 0, false, game, 0)
+            end)
+        end
     end
 end
 
 local function StartMacro()
-    State.Running = true; LastFireTime = os.clock(); ResetStreak()
+    State.Running = true; ResetStreak()
     if Connections.Macro then Connections.Macro:Disconnect() end
-    Connections.Macro = RunService.PreRender:Connect(MacroTick)
+    Connections.Macro = RunService.Heartbeat:Connect(MacroTick)
 end
 
 local function StopMacro()
@@ -478,7 +470,7 @@ CreateLabel({Name="Title", Size=UDim2.new(0,70,1,0), Position=UDim2.new(0,12,0,0
 CreateStatusDot({Name="VDot", Size=4, Position=UDim2.new(0,86,0.5,-2), Color=Theme.Success, Parent=HeaderBar})
 CreateLabel({Size=UDim2.new(0,25,1,0), Position=UDim2.new(0,93,0,0), Text="v2.0", Color=Theme.TextDisabled, Size2=8, Parent=HeaderBar})
 CreateStatusDot({Name="HDot", Size=4, Position=UDim2.new(0,124,0.5,-2), Color=Theme.Info, Parent=HeaderBar})
-CreateLabel({Size=UDim2.new(0,55,1,0), Position=UDim2.new(0,131,0,0), Text=HID.Method, Color=Theme.TextDisabled, Size2=8, Parent=HeaderBar})
+CreateLabel({Size=UDim2.new(0,55,1,0), Position=UDim2.new(0,131,0,0), Text="PURE VIM", Color=Theme.TextDisabled, Size2=8, Parent=HeaderBar})
 CreateLabel({Size=UDim2.new(0,55,1,0), Position=UDim2.new(1,-62,0,0), Text="RShift ▾", Color=Theme.TextDisabled, Size2=8, XAlign=Enum.TextXAlignment.Right, Parent=HeaderBar})
 
 local ContentArea = CreateFrame({Name="Content", Size=UDim2.new(1,-20,1,-42), Position=UDim2.new(0,10,0,40), Transparency=1, Parent=MainPanel})
@@ -486,7 +478,7 @@ local ContentArea = CreateFrame({Name="Content", Size=UDim2.new(1,-20,1,-42), Po
 -- COLUMN 1: MACRO
 local C1W = 185
 local Col1 = CreateFrame({Size=UDim2.new(0,C1W,1,0), Transparency=1, Parent=ContentArea})
-CreateLabel({Size=UDim2.new(1,0,0,14), Position=UDim2.new(0,0,0,4), Text="MACRO [F KEY]", Color=Theme.TextDisabled, Size2=8, Font=Enum.Font.GothamBold, Parent=Col1})
+CreateLabel({Size=UDim2.new(1,0,0,14), Position=UDim2.new(0,0,0,4), Text="MACRO [RAW F]", Color=Theme.TextDisabled, Size2=8, Font=Enum.Font.GothamBold, Parent=Col1})
 
 local ModeButton = CreateButton({Name="ModeBtn", Size=UDim2.new(0.48,0,0,32), Position=UDim2.new(0,0,0,22), Text="KPS", TextSize=10, Corner=6, Parent=Col1})
 local BindButton = CreateButton({Name="BindBtn", Size=UDim2.new(0.48,0,0,32), Position=UDim2.new(0.52,0,0,22), Text="KEYBIND", TextColor=Theme.TextSecondary, TextSize=10, Corner=6, Parent=Col1})
@@ -529,7 +521,7 @@ CreateLabel({Size=UDim2.new(1,0,0,14), Position=UDim2.new(0,0,0,4), Text="DIAGNO
 local DiagDots, DiagTexts = {}, {}
 local diagData = {
     {id="Macro", t="MACRO: IDLE"}, {id="Parry", t="PARRY: OFF"}, {id="Ball", t="TARGET: NONE"},
-    {id="Viz", t="VIZ: OFF"}, {id="HID", t="HID: "..HID.Method}, {id="Pattern", t="BOT: 0%"}
+    {id="Viz", t="VIZ: OFF"}, {id="HID", t="INPUT: PURE VIM"}, {id="Pattern", t="BOT: 0%"}
 }
 for i, d in ipairs(diagData) do
     local xo, yo = 0, 22 + ((i-1)%3)*28
@@ -543,8 +535,8 @@ end
 --------------------------------------------------------------------------------
 local ActivateFrame = CreateFrame({
     Name = "ActivateFrame", 
-    Size = UDim2.new(0, 160, 0, 34), -- Made smaller
-    Position = UDim2.new(0.5, -80, 0.5, PANEL_H/2 - 30 + 10), -- Positioned below panel
+    Size = UDim2.new(0, 160, 0, 34), 
+    Position = UDim2.new(0.5, -80, 0.5, PANEL_H/2 - 30 + 10), 
     Color = Theme.Surface, Corner = 10, Stroke = true, StrokeColor = Theme.Border, Parent = Container
 })
 
@@ -556,22 +548,18 @@ local ActivateButton = CreateButton({
 })
 local ActDot = CreateStatusDot({Name="ActDot", Size=5, Position=UDim2.new(1,-15,0.5,-2.5), Color=Theme.TextDisabled, Parent=ActivateButton})
 
--- Custom Drag Logic for the Activate Button (So it can be dragged without accidentally clicking)
+-- Custom Drag Logic
 local actDragging, actMoved, actStart, actInitialPos = false, false, nil, nil
 
 ActivateButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        actDragging = true
-        actMoved = false
-        actStart = input.Position
-        actInitialPos = ActivateFrame.Position
+        actDragging = true; actMoved = false; actStart = input.Position; actInitialPos = ActivateFrame.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
     if actDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - actStart
-        -- If moved more than 5 pixels, it's a drag, not a click
         if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
             actMoved = true
             ActivateFrame.Position = UDim2.new(
@@ -655,7 +643,7 @@ local function UpdateUI()
     DiagTexts.Viz.TextColor3 = State.VizActive and Theme.TextSecondary or Theme.TextMuted
 
     DiagDots.HID.BackgroundColor3 = Theme.Info
-    DiagTexts.HID.Text = "HID: " .. HID.Method
+    DiagTexts.HID.Text = "INPUT: PURE VIM"
     DiagTexts.HID.TextColor3 = Theme.TextSecondary
 
     local ps = math.floor(AntiDetect.PatternScore)
@@ -696,14 +684,9 @@ BindButton.MouseButton1Click:Connect(function()
     State.Binding = true; UpdateUI()
 end)
 
--- Custom Click for Activate (Ignores if it was just being dragged)
 ActivateButton.MouseButton1Click:Connect(function()
-    if actMoved then
-        actMoved = false -- Reset flag so next click works normally
-        return
-    end
-    ToggleMacro()
-    UpdateUI()
+    if actMoved then actMoved = false; return end
+    ToggleMacro(); UpdateUI()
 end)
 
 ParryButton.MouseButton1Click:Connect(function()
