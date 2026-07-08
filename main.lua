@@ -1,698 +1,176 @@
 -- =============================================================================
--- VAPORWAVE ENGINE V9 - BLADE BALL STEALTH EDITION
--- Full dark gray theme + anti-detection + Blade Ball bypass
+-- THYREN REPOSITORY DASHBOARD (COLLAPSIBLE LOGO MODULE)
+-- TARGET: Roblox Executor Environment (Zero-Allocation Micro-Loops)
+-- THEME: Slate & Graphite (Minimalist Gray)
 -- =============================================================================
 
-local UIS = game:GetService("UserInputService")
-local LP = game:GetService("Players").LocalPlayer
-local PG = LP:WaitForChild("PlayerGui")
-local CG = game:GetService("CoreGui")
-local VIM = game:GetService("VirtualInputManager")
-local RS = game:GetService("RunService")
-local TS = game:GetService("TweenService")
+local uiName = "ThyrenUI"
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- =============================================================================
--- STEALTH PROTECTION — BREAKS DETECTION
--- =============================================================================
+-- 1. PURGE PREVIOUS INSTANCES
+pcall(function() local oldUI = CoreGui:FindFirstChild(uiName) if oldUI then oldUI:Destroy() end end)
+pcall(function() if LocalPlayer then local pGui = LocalPlayer:FindFirstChild("PlayerGui") local oldUI = pGui and pGui:FindFirstChild(uiName) if oldUI then oldUI:Destroy() end end end)
 
--- Disable common detection methods
-pcall(function()
-    -- Remove script from stack traces
-    getfenv().script = nil
-    getfenv().debug = nil
-end)
+-- 2. ALLOCATE SECURE STORAGE
+local TargetParent = nil
+local successCore = pcall(function() local test = Instance.new("Folder"); test.Parent = CoreGui; test:Destroy(); TargetParent = CoreGui end)
+if not successCore or not TargetParent then TargetParent = LocalPlayer:WaitForChild("PlayerGui") end
 
--- Fake environment variables (spoof detection)
-pcall(function()
-    local old_getfenv = getfenv
-    getfenv = function() 
-        local env = old_getfenv()
-        -- Remove references to our UI
-        env._G.VaporwaveUI = nil
-        env._G.VW = nil
-        return env
-    end
-end)
+-- 3. UNIFIED CONFIGURATION STATE
+local EngineState = { IsRunning = false, TargetSpeed = 10, ModeSelection = "KPS", LowEndMode = false, ActivationMode = "Manual Spam", RuntimeHotkey = nil, IsBinding = false, AutoParryActive = false, ParryThreshold = 45, SpamKey = Enum.KeyCode.F, ParryConnection = nil, ConfigVisible = true, Collapsed = false }
 
--- Break checkstack detection
-pcall(function()
-    local old_debug_info = debug.getinfo
-    debug.getinfo = function(...)
-        local info = old_debug_info(...)
-        if info then
-            info.name = "unknown"
-            info.source = "=[C]"
-            info.short_src = "=[C]"
-        end
-        return info
-    end
-end)
-
--- =============================================================================
--- COLORS — DARK GRAY THEME
--- =============================================================================
-
-local Colors = {
-    bg = Color3.fromRGB(18, 18, 22),
-    bg2 = Color3.fromRGB(24, 24, 30),
-    bg3 = Color3.fromRGB(32, 32, 40),
-    bg4 = Color3.fromRGB(40, 40, 50),
-    bg5 = Color3.fromRGB(50, 50, 62),
-    border = Color3.fromRGB(45, 45, 55),
-    borderLight = Color3.fromRGB(60, 60, 72),
-    text = Color3.fromRGB(230, 230, 240),
-    textDim = Color3.fromRGB(140, 140, 160),
-    textBright = Color3.fromRGB(255, 255, 255),
-    accent = Color3.fromRGB(150, 50, 255),
-    accent2 = Color3.fromRGB(255, 0, 127),
-    accentDim = Color3.fromRGB(100, 30, 180),
-    success = Color3.fromRGB(68, 255, 136),
-    error = Color3.fromRGB(255, 68, 85),
-    warning = Color3.fromRGB(255, 170, 51),
-    idle = Color3.fromRGB(140, 140, 160),
-}
-
--- =============================================================================
--- STEALTH UI — NO "ScreenGui" NAMED "VaporwaveUI" (detection bypass)
--- =============================================================================
-
-local SG = Instance.new("ScreenGui")
-SG.Name = "VortexUI"  -- disguise name
-SG.ResetOnSpawn = false
-SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-SG.Parent = CG
-
--- Hide from GetChildren scans
-pcall(function()
-    SG.Archivable = false
-end)
-
--- =============================================================================
--- STEALTH STORAGE — HIDE FROM MEMORY SCANS
--- =============================================================================
-
-local HiddenStorage = Instance.new("Folder")
-HiddenStorage.Name = "Vortex"
-HiddenStorage.Archivable = false
-HiddenStorage.Parent = SG
-
--- =============================================================================
--- STATE (hidden in closure)
--- =============================================================================
-
-local State = {
-    running = false,
-    speed = 10,
-    mode = "KPS",
-    lowEnd = false,
-    activation = "Manual",
-    hotkey = nil,
-    binding = false,
-    autoParry = false,
-    parryThreshold = 45,
-    spamKey = Enum.KeyCode.F,
-    parryConnection = nil,
-    visible = true,
-    collapsed = false,
-    macroConnection = nil,
-    lastFire = 0,
-}
-
--- =============================================================================
--- LOCAL FUNCTIONS (optimized, no globals)
--- =============================================================================
-
-local sendKey = VIM.SendKeyEvent
-local sendMouse = VIM.SendMouseButtonEvent
-local getMouse = UIS.GetMouseLocation
+local sendKeyEvent = VirtualInputManager.SendKeyEvent
+local sendMouseButtonEvent = VirtualInputManager.SendMouseButtonEvent
+local getMouseLocation = UserInputService.GetMouseLocation
 local osClock = os.clock
 local clamp = math.clamp
 local round = math.round
+local ipairs = ipairs
 
--- =============================================================================
--- STEALTH SPAM ENGINE (no function names in traces)
--- =============================================================================
+local MacroConnection = nil
+local lastFireTime = 0
 
-local function RunSpam()
-    if not State.running then return end
-    
-    local speed = State.speed
-    local mode = State.mode
-    local key = State.spamKey
-    
-    if speed >= 60 then
-        if mode == "KPS" then
-            sendKey(VIM, true, key, false, game)
-            sendKey(VIM, false, key, false, game)
-            sendKey(VIM, true, key, false, game)
-            sendKey(VIM, false, key, false, game)
-        else
-            local pos = getMouse(UIS)
-            sendMouse(VIM, pos.X, pos.Y, 0, true, game, 0)
-            sendMouse(VIM, pos.X, pos.Y, 0, false, game, 0)
-            sendMouse(VIM, pos.X, pos.Y, 0, true, game, 0)
-            sendMouse(VIM, pos.X, pos.Y, 0, false, game, 0)
-        end
-    else
-        local now = osClock()
-        if (now - State.lastFire) >= (1.0 / speed) then
-            State.lastFire = now
-            if mode == "KPS" then
-                sendKey(VIM, true, key, false, game)
-                sendKey(VIM, false, key, false, game)
-            else
-                local pos = getMouse(UIS)
-                sendMouse(VIM, pos.X, pos.Y, 0, true, game, 0)
-                sendMouse(VIM, pos.X, pos.Y, 0, false, game, 0)
-            end
-        end
-    end
+-- 4. OPTIMIZED STEPPING PIPELINE
+local function RunSpamIteration()
+    if not EngineState.IsRunning then return end
+    local targetSpeed = EngineState.TargetSpeed; local currentMode = EngineState.ModeSelection; local spamKey = EngineState.SpamKey
+    if targetSpeed >= 60 then
+        if currentMode == "KPS" then sendKeyEvent(VirtualInputManager, true, spamKey, false, game); sendKeyEvent(VirtualInputManager, false, spamKey, false, game); sendKeyEvent(VirtualInputManager, true, spamKey, false, game); sendKeyEvent(VirtualInputManager, false, spamKey, false, game)
+        else local mousePos = getMouseLocation(UserInputService); local mx, my = mousePos.X, mousePos.Y; sendMouseButtonEvent(VirtualInputManager, mx, my, 0, true, game, 0); sendMouseButtonEvent(VirtualInputManager, mx, my, 0, false, game, 0); sendMouseButtonEvent(VirtualInputManager, mx, my, 0, true, game, 0); sendMouseButtonEvent(VirtualInputManager, mx, my, 0, false, game, 0) end
+    else local currentTime = osClock() if (currentTime - lastFireTime) >= (1.0 / targetSpeed) then lastFireTime = currentTime; if currentMode == "KPS" then sendKeyEvent(VirtualInputManager, true, spamKey, false, game); sendKeyEvent(VirtualInputManager, false, spamKey, false, game) else local mousePos = getMouseLocation(UserInputService); sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, true, game, 0); sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, false, game, 0) end end end
 end
 
--- =============================================================================
--- STEALTH START/STOP (no detectable connections)
--- =============================================================================
+local function StartLoop() EngineState.IsRunning = true; lastFireTime = osClock(); if MacroConnection then MacroConnection:Disconnect() end; MacroConnection = RunService.PreRender:Connect(RunSpamIteration) end
+local function StopLoop() EngineState.IsRunning = false; if MacroConnection then MacroConnection:Disconnect(); MacroConnection = nil end end
+local function ToggleEngine() if EngineState.IsRunning then StopLoop() else StartLoop() end end
 
-local function StartSpam()
-    State.running = true
-    State.lastFire = osClock()
-    if State.macroConnection then State.macroConnection:Disconnect() end
-    State.macroConnection = RS.PreRender:Connect(RunSpam)
-    -- Hide the connection from memory
-    pcall(function()
-        State.macroConnection.Enabled = true
+-- 5. CACHED TARGETING SCANNER
+local function FindActiveBall()
+    local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
+    if BallFolder then for i = 1, #BallFolder:GetChildren() do local ball = BallFolder:GetChildren()[i]; if ball:IsA("BasePart") or ball:FindFirstChildOfClass("BasePart") then local realPart = ball:IsA("BasePart") and ball or ball:FindFirstChildOfClass("BasePart"); local targetAttr = ball:GetAttribute("target") or ball:GetAttribute("Target"); if targetAttr == LocalPlayer.Name then return realPart end end end end
+    for i = 1, #workspace:GetChildren() do local obj = workspace:GetChildren()[i]; if obj.Name == "Ball" and obj:IsA("BasePart") and obj:GetAttribute("target") == LocalPlayer.Name then return obj end end
+    return nil
+end
+
+local function StartParryTracking()
+    if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
+    EngineState.ParryConnection = RunService.PreSimulation:Connect(function()
+        if not EngineState.AutoParryActive then return end
+        local character = LocalPlayer.Character; local rootPart = character and character:FindFirstChild("HumanoidRootPart"); if not rootPart then return end
+        local ball = FindActiveBall()
+        if ball then local distance = (ball.Position - rootPart.Position).Magnitude; local ballVelocity = ball.AssemblyLinearVelocity.Magnitude; local dynamicTriggerRange = EngineState.ParryThreshold + (ballVelocity * 0.12)
+            if distance <= dynamicTriggerRange then if EngineState.ModeSelection == "KPS" then sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game); sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game) else local mousePos = getMouseLocation(UserInputService); sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, true, game, 0); sendMouseButtonEvent(VirtualInputManager, mousePos.X, mousePos.Y, 0, false, game, 0) end end
+        end
     end)
 end
 
-local function StopSpam()
-    State.running = false
-    if State.macroConnection then
-        State.macroConnection:Disconnect()
-        State.macroConnection = nil
-    end
-end
+local function StopParryTracking() if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect(); EngineState.ParryConnection = nil end end
 
--- =============================================================================
--- UI FUNCTIONS
--- =============================================================================
+-- 6. INTERFACE ENVIRONMENT ARCHITECTURE (THYREN GRAY THEME)
+local ScreenGui = Instance.new("ScreenGui", TargetParent); ScreenGui.Name = uiName; ScreenGui.ResetOnSpawn = false
+local ConfigCanvas = Instance.new("Frame", ScreenGui); ConfigCanvas.Name = "ConfigCanvas"; ConfigCanvas.Size = UDim2.new(1, 0, 1, 0); ConfigCanvas.BackgroundTransparency = 1
 
-local function ApplyRadius(obj, r)
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, r)
-    c.Parent = obj
-end
+local function ApplyRadius(instance, radius) local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, radius); corner.Parent = instance; return corner end
 
-local function Animate(obj, props, time)
-    time = time or 0.2
-    TS:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
-end
+local MainFrame = Instance.new("Frame", ConfigCanvas); MainFrame.Name = "MainFrame"; MainFrame.Size = UDim2.new(0, 500, 0, 360); MainFrame.Position = UDim2.new(0.5, -250, 0.5, -210); MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MainFrame.Active = true; MainFrame.Draggable = true; ApplyRadius(MainFrame, 8)
+local UIStroke = Instance.new("UIStroke", MainFrame); UIStroke.Color = Color3.fromRGB(160, 160, 160); UIStroke.Thickness = 1; UIStroke.Transparency = 0.3
 
--- =============================================================================
--- CREATE UI (disguised names)
--- =============================================================================
+-- [UI ELEMENTS]
+local TitleLabel = Instance.new("TextButton", ConfigCanvas); TitleLabel.Name = "LogoButton"; TitleLabel.Size = UDim2.new(0, 160, 0, 40); TitleLabel.Position = UDim2.new(0.5, -230, 0.5, -200); TitleLabel.BackgroundTransparency = 1; TitleLabel.Text = "THYREN"; TitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200); TitleLabel.Font = Enum.Font.Michroma; TitleLabel.TextSize = 16; TitleLabel.TextXAlignment = Enum.TextXAlignment.Left; TitleLabel.ZIndex = 5
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 480, 0, 380)
-Main.Position = UDim2.new(0.5, -240, 0.4, -190)
-Main.BackgroundColor3 = Colors.bg
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Main.ClipsDescendants = true
-Main.Name = "MainUI"
-Main.Parent = HiddenStorage
-ApplyRadius(Main, 12)
+local ModeBtn = Instance.new("TextButton", ConfigCanvas); ModeBtn.Size = UDim2.new(0, 215, 0, 42); ModeBtn.Position = UDim2.new(0.5, -230, 0.5, -150); ModeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); ModeBtn.Text = "MODE: KPS"; ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 230); ModeBtn.Font = Enum.Font.Michroma; ModeBtn.ZIndex = 5; ApplyRadius(ModeBtn, 4)
+local ModeStroke = Instance.new("UIStroke", ModeBtn); ModeStroke.Color = Color3.fromRGB(120, 120, 120); ModeStroke.Thickness = 1
 
-local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Colors.border
-Stroke.Thickness = 1
-Stroke.Transparency = 0
+local SwitchContainer = Instance.new("Frame", ConfigCanvas); SwitchContainer.Size = UDim2.new(0, 215, 0, 42); SwitchContainer.Position = UDim2.new(0.5, 15, 0.5, -150); SwitchContainer.BackgroundColor3 = Color3.fromRGB(50, 50, 50); SwitchContainer.ZIndex = 5; ApplyRadius(SwitchContainer, 4)
+local SwitchStroke = Instance.new("UIStroke", SwitchContainer); SwitchStroke.Color = Color3.fromRGB(120, 120, 120); SwitchStroke.Thickness = 1
+local SwitchLabel = Instance.new("TextLabel", SwitchContainer); SwitchLabel.Size = UDim2.new(0, 140, 1, 0); SwitchLabel.Position = UDim2.new(0, 12, 0, 0); SwitchLabel.BackgroundTransparency = 1; SwitchLabel.Text = "KEYBIND"; SwitchLabel.TextColor3 = Color3.fromRGB(230, 230, 230); SwitchLabel.Font = Enum.Font.Michroma; SwitchLabel.ZIndex = 6
+local ToggleTrack = Instance.new("TextButton", SwitchContainer); ToggleTrack.Size = UDim2.new(0, 46, 0, 26); ToggleTrack.Position = UDim2.new(1, -56, 0.5, -13); ToggleTrack.BackgroundColor3 = Color3.fromRGB(65, 65, 65); ToggleTrack.Text = ""; ToggleTrack.ZIndex = 6; ApplyRadius(ToggleTrack, 13)
+local ToggleThumb = Instance.new("Frame", ToggleTrack); ToggleThumb.Size = UDim2.new(0, 22, 0, 22); ToggleThumb.Position = UDim2.new(0, 2, 0.5, -11); ToggleThumb.BackgroundColor3 = Color3.fromRGB(230, 230, 230); ToggleThumb.ZIndex = 7; ApplyRadius(ToggleThumb, 11)
 
--- =============================================================================
--- TITLE BAR (no "Vaporwave" in name)
--- =============================================================================
+local SliderTrack = Instance.new("Frame", ConfigCanvas); SliderTrack.Size = UDim2.new(0, 340, 0, 6); SliderTrack.Position = UDim2.new(0.5, -230, 0.5, -85); SliderTrack.BackgroundColor3 = Color3.fromRGB(70, 70, 70); SliderTrack.ZIndex = 5; ApplyRadius(SliderTrack, 3)
+local SliderFill = Instance.new("Frame", SliderTrack); SliderFill.Size = UDim2.new(0.01, 0, 1, 0); SliderFill.BackgroundColor3 = Color3.fromRGB(160, 160, 160); SliderFill.ZIndex = 6; ApplyRadius(SliderFill, 3)
+local SliderButton = Instance.new("TextButton", SliderTrack); SliderButton.Size = UDim2.new(0, 14, 0, 14); SliderButton.Position = UDim2.new(0.01, -7, 0.5, -7); SliderButton.BackgroundColor3 = Color3.fromRGB(180, 180, 180); SliderButton.Text = ""; SliderButton.ZIndex = 7; ApplyRadius(SliderButton, 7)
+local SpeedDisplay = Instance.new("TextLabel", ConfigCanvas); SpeedDisplay.Size = UDim2.new(0, 120, 0, 30); SpeedDisplay.Position = UDim2.new(0.5, 110, 0.5, -97); SpeedDisplay.BackgroundTransparency = 1; SpeedDisplay.Text = "10 KPS"; SpeedDisplay.TextColor3 = Color3.fromRGB(160, 160, 160); SpeedDisplay.Font = Enum.Font.Michroma; SpeedDisplay.TextSize = 14; SpeedDisplay.ZIndex = 5
 
-local Title = Instance.new("Frame", Main)
-Title.Size = UDim2.new(1, 0, 0, 36)
-Title.BackgroundColor3 = Colors.bg2
-Title.BorderSizePixel = 0
-Title.Name = "Title"
-ApplyRadius(Title, 12)
+local ParryBtn = Instance.new("TextButton", ConfigCanvas); ParryBtn.Size = UDim2.new(0, 460, 0, 40); ParryBtn.Position = UDim2.new(0.5, -230, 0.5, -55); ParryBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); ParryBtn.Text = "AUTO PARRY: DISABLED"; ParryBtn.TextColor3 = Color3.fromRGB(120, 120, 120); ParryBtn.Font = Enum.Font.Michroma; ParryBtn.ZIndex = 5; ApplyRadius(ParryBtn, 4)
+local ParryStroke = Instance.new("UIStroke", ParryBtn); ParryStroke.Color = Color3.fromRGB(120, 120, 120); ParryStroke.Thickness = 1
+local DiagPanel = Instance.new("Frame", ConfigCanvas); DiagPanel.Size = UDim2.new(0, 460, 0, 110); DiagPanel.Position = UDim2.new(0.5, -230, 0.5, 5); DiagPanel.BackgroundColor3 = Color3.fromRGB(45, 45, 45); DiagPanel.ZIndex = 4; ApplyRadius(DiagPanel, 4)
+local DiagStroke = Instance.new("UIStroke", DiagPanel); DiagStroke.Color = Color3.fromRGB(120, 120, 120); DiagStroke.Thickness = 1
 
-local TitleLabel = Instance.new("TextLabel", Title)
-TitleLabel.Size = UDim2.new(1, -50, 1, 0)
-TitleLabel.Position = UDim2.new(0, 14, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "🌊 VORTEX"
-TitleLabel.TextColor3 = Colors.accent2
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 16
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Name = "TitleText"
+local DiagMacroLabel = Instance.new("TextLabel", DiagPanel); DiagMacroLabel.Size = UDim2.new(1, -30, 0, 20); DiagMacroLabel.Position = UDim2.new(0, 15, 0, 35); DiagMacroLabel.BackgroundTransparency = 1; DiagMacroLabel.Text = "STATUS: STANDBY"; DiagMacroLabel.TextColor3 = Color3.fromRGB(150, 150, 150); DiagMacroLabel.Font = Enum.Font.Michroma; DiagMacroLabel.TextSize = 11; DiagMacroLabel.TextXAlignment = Enum.TextXAlignment.Left; DiagMacroLabel.ZIndex = 5
+local DiagKeyLabel = Instance.new("TextLabel", DiagPanel); DiagKeyLabel.Size = UDim2.new(1, -30, 0, 20); DiagKeyLabel.Position = UDim2.new(0, 15, 0, 55); DiagKeyLabel.BackgroundTransparency = 1; DiagKeyLabel.Text = "BIND REGISTER: NONE"; DiagKeyLabel.TextColor3 = Color3.fromRGB(150, 150, 150); DiagKeyLabel.Font = Enum.Font.Michroma; DiagKeyLabel.TextSize = 11; DiagKeyLabel.TextXAlignment = Enum.TextXAlignment.Left; DiagKeyLabel.ZIndex = 5
+local DiagParryLabel = Instance.new("TextLabel", DiagPanel); DiagParryLabel.Size = UDim2.new(1, -30, 0, 20); DiagParryLabel.Position = UDim2.new(0, 15, 0, 75); DiagParryLabel.BackgroundTransparency = 1; DiagParryLabel.Text = "DEFENSE MATRIX: DISENGAGED"; DiagParryLabel.TextColor3 = Color3.fromRGB(150, 150, 150); DiagParryLabel.Font = Enum.Font.Michroma; DiagParryLabel.TextSize = 11; DiagParryLabel.TextXAlignment = Enum.TextXAlignment.Left; DiagParryLabel.ZIndex = 5
 
-local CloseBtn = Instance.new("TextButton", Title)
-CloseBtn.Size = UDim2.new(0, 28, 1, -6)
-CloseBtn.Position = UDim2.new(1, -34, 0, 3)
-CloseBtn.BackgroundColor3 = Colors.bg3
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Colors.textDim
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 13
-CloseBtn.BorderSizePixel = 0
-ApplyRadius(CloseBtn, 6)
+local ControlPod = Instance.new("Frame", ScreenGui); ControlPod.Size = UDim2.new(0, 260, 0, 75); ControlPod.Position = UDim2.new(0.5, -130, 0.5, 160); ControlPod.BackgroundColor3 = Color3.fromRGB(30, 30, 30); ControlPod.Active = true; ControlPod.Draggable = true; ApplyRadius(ControlPod, 6)
+local PodStroke = Instance.new("UIStroke", ControlPod); PodStroke.Color = Color3.fromRGB(160, 160, 160); PodStroke.Thickness = 1
+local ActionButton = Instance.new("TextButton", ScreenGui); ActionButton.Size = UDim2.new(0, 230, 0, 36); ActionButton.Position = UDim2.new(0.5, -115, 0.5, 175); ActionButton.BackgroundColor3 = Color3.fromRGB(120, 120, 120); ActionButton.Text = "ACTIVATE"; ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255); ActionButton.Font = Enum.Font.Michroma; ActionButton.ZIndex = 5; ApplyRadius(ActionButton, 4)
+local StatusBar = Instance.new("TextLabel", ScreenGui); StatusBar.Size = UDim2.new(0, 230, 0, 18); StatusBar.Position = UDim2.new(0.5, -115, 0.5, 213); StatusBar.BackgroundTransparency = 1; StatusBar.Text = "WORKFLOW IDLE"; StatusBar.TextColor3 = Color3.fromRGB(150, 150, 150); StatusBar.Font = Enum.Font.Michroma; StatusBar.TextSize = 10; StatusBar.ZIndex = 5
 
-CloseBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-end)
-
-CloseBtn.MouseEnter:Connect(function()
-    CloseBtn.BackgroundColor3 = Colors.error
-    CloseBtn.TextColor3 = Colors.textBright
-end)
-
-CloseBtn.MouseLeave:Connect(function()
-    CloseBtn.BackgroundColor3 = Colors.bg3
-    CloseBtn.TextColor3 = Colors.textDim
-end)
-
--- =============================================================================
--- CONTENT (rest of UI)
--- =============================================================================
-
-local Content = Instance.new("Frame", Main)
-Content.Size = UDim2.new(1, 0, 1, -36)
-Content.Position = UDim2.new(0, 0, 0, 36)
-Content.BackgroundTransparency = 1
-Content.Name = "Content"
-
--- MODE ROW
-local ModeRow = Instance.new("Frame", Content)
-ModeRow.Size = UDim2.new(1, -20, 0, 36)
-ModeRow.Position = UDim2.new(0, 10, 0, 8)
-ModeRow.BackgroundColor3 = Colors.bg2
-ModeRow.BorderSizePixel = 0
-ApplyRadius(ModeRow, 8)
-
-local ModeBtn = Instance.new("TextButton", ModeRow)
-ModeBtn.Size = UDim2.new(0, 140, 1, -4)
-ModeBtn.Position = UDim2.new(0, 4, 0, 2)
-ModeBtn.BackgroundColor3 = Colors.bg3
-ModeBtn.Text = "KPS"
-ModeBtn.TextColor3 = Colors.text
-ModeBtn.Font = Enum.Font.GothamBold
-ModeBtn.TextSize = 13
-ModeBtn.BorderSizePixel = 0
-ApplyRadius(ModeBtn, 6)
-
-local ModeLabel = Instance.new("TextLabel", ModeRow)
-ModeLabel.Size = UDim2.new(0, 120, 1, 0)
-ModeLabel.Position = UDim2.new(0, 155, 0, 0)
-ModeLabel.BackgroundTransparency = 1
-ModeLabel.Text = "Mode"
-ModeLabel.TextColor3 = Colors.textDim
-ModeLabel.Font = Enum.Font.Gotham
-ModeLabel.TextSize = 12
-ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local ParryToggle = Instance.new("TextButton", ModeRow)
-ParryToggle.Size = UDim2.new(0, 100, 1, -4)
-ParryToggle.Position = UDim2.new(1, -104, 0, 2)
-ParryToggle.BackgroundColor3 = Colors.bg3
-ParryToggle.Text = "PARRY: OFF"
-ParryToggle.TextColor3 = Colors.textDim
-ParryToggle.Font = Enum.Font.GothamBold
-ParryToggle.TextSize = 11
-ParryToggle.BorderSizePixel = 0
-ApplyRadius(ParryToggle, 6)
-
--- KEYBIND ROW
-local KeyRow = Instance.new("Frame", Content)
-KeyRow.Size = UDim2.new(1, -20, 0, 32)
-KeyRow.Position = UDim2.new(0, 10, 0, 50)
-KeyRow.BackgroundColor3 = Colors.bg2
-KeyRow.BorderSizePixel = 0
-ApplyRadius(KeyRow, 8)
-
-local KeyLabel = Instance.new("TextLabel", KeyRow)
-KeyLabel.Size = UDim2.new(0, 80, 1, 0)
-KeyLabel.Position = UDim2.new(0, 12, 0, 0)
-KeyLabel.BackgroundTransparency = 1
-KeyLabel.Text = "KEY: F"
-KeyLabel.TextColor3 = Colors.text
-KeyLabel.Font = Enum.Font.GothamBold
-KeyLabel.TextSize = 12
-KeyLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local BindBtn = Instance.new("TextButton", KeyRow)
-BindBtn.Size = UDim2.new(0, 80, 1, -4)
-BindBtn.Position = UDim2.new(1, -84, 0, 2)
-BindBtn.BackgroundColor3 = Colors.bg3
-BindBtn.Text = "BIND"
-BindBtn.TextColor3 = Colors.text
-BindBtn.Font = Enum.Font.GothamBold
-BindBtn.TextSize = 11
-BindBtn.BorderSizePixel = 0
-ApplyRadius(BindBtn, 6)
-
--- CPS SLIDER
-local SliderLabel = Instance.new("TextLabel", Content)
-SliderLabel.Size = UDim2.new(0, 100, 0, 20)
-SliderLabel.Position = UDim2.new(0, 14, 0, 90)
-SliderLabel.BackgroundTransparency = 1
-SliderLabel.Text = "CPS: 10"
-SliderLabel.TextColor3 = Colors.accent2
-SliderLabel.Font = Enum.Font.GothamBold
-SliderLabel.TextSize = 13
-
-local SliderTrack = Instance.new("Frame", Content)
-SliderTrack.Size = UDim2.new(1, -80, 0, 6)
-SliderTrack.Position = UDim2.new(0, 14, 0, 114)
-SliderTrack.BackgroundColor3 = Colors.bg4
-SliderTrack.BorderSizePixel = 0
-ApplyRadius(SliderTrack, 3)
-
-local SliderFill = Instance.new("Frame", SliderTrack)
-SliderFill.Size = UDim2.new(0.1, 0, 1, 0)
-SliderFill.BackgroundColor3 = Colors.accent2
-SliderFill.BorderSizePixel = 0
-ApplyRadius(SliderFill, 3)
-
-local SliderBtn = Instance.new("TextButton", SliderTrack)
-SliderBtn.Size = UDim2.new(0, 16, 0, 16)
-SliderBtn.Position = UDim2.new(0.1, -8, 0.5, -8)
-SliderBtn.BackgroundColor3 = Colors.accent2
-SliderBtn.Text = ""
-SliderBtn.BorderSizePixel = 0
-ApplyRadius(SliderBtn, 8)
-
--- STATUS
-local StatusLabel = Instance.new("TextLabel", Content)
-StatusLabel.Size = UDim2.new(1, -20, 0, 24)
-StatusLabel.Position = UDim2.new(0, 14, 0, 130)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "⏸ IDLE"
-StatusLabel.TextColor3 = Colors.textDim
-StatusLabel.Font = Enum.Font.GothamBold
-StatusLabel.TextSize = 14
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- CONSOLE
-local Console = Instance.new("Frame", Content)
-Console.Size = UDim2.new(1, -20, 0, 60)
-Console.Position = UDim2.new(0, 10, 0, 160)
-Console.BackgroundColor3 = Colors.bg2
-Console.BorderSizePixel = 0
-ApplyRadius(Console, 8)
-
-local ConsoleText = Instance.new("TextLabel", Console)
-ConsoleText.Size = UDim2.new(1, -16, 1, 0)
-ConsoleText.Position = UDim2.new(0, 16, 0, 0)
-ConsoleText.BackgroundTransparency = 1
-ConsoleText.Text = "⚡ Ready"
-ConsoleText.TextColor3 = Colors.textDim
-ConsoleText.Font = Enum.Font.Code
-ConsoleText.TextSize = 11
-ConsoleText.TextXAlignment = Enum.TextXAlignment.Left
-ConsoleText.TextYAlignment = Enum.TextYAlignment.Top
-ConsoleText.LineHeight = 1.2
-
--- MANUAL SPAM BUTTON
-local ManualBtn = Instance.new("TextButton", Content)
-ManualBtn.Size = UDim2.new(1, -20, 0, 48)
-ManualBtn.Position = UDim2.new(0, 10, 0, 228)
-ManualBtn.BackgroundColor3 = Colors.accent
-ManualBtn.Text = "🔴 HOLD TO SPAM"
-ManualBtn.TextColor3 = Colors.textBright
-ManualBtn.Font = Enum.Font.GothamBold
-ManualBtn.TextSize = 16
-ManualBtn.BorderSizePixel = 0
-ApplyRadius(ManualBtn, 10)
-
-local ManualGlow = Instance.new("UIStroke", ManualBtn)
-ManualGlow.Color = Colors.accent
-ManualGlow.Thickness = 2
-ManualGlow.Transparency = 0.5
-
--- TOGGLE BUTTON
-local ToggleBtn = Instance.new("TextButton", Content)
-ToggleBtn.Size = UDim2.new(1, -20, 0, 44)
-ToggleBtn.Position = UDim2.new(0, 10, 0, 232)
-ToggleBtn.BackgroundColor3 = Colors.bg3
-ToggleBtn.Text = "▶ START"
-ToggleBtn.TextColor3 = Colors.text
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 14
-ToggleBtn.BorderSizePixel = 0
-ToggleBtn.Visible = false
-ApplyRadius(ToggleBtn, 10)
-
--- MODE SWITCH BUTTON
-local ModeSwitch = Instance.new("TextButton", Content)
-ModeSwitch.Size = UDim2.new(0, 100, 0, 28)
-ModeSwitch.Position = UDim2.new(1, -110, 0, 2)
-ModeSwitch.BackgroundColor3 = Colors.accent
-ModeSwitch.Text = "TOGGLE"
-ModeSwitch.TextColor3 = Colors.text
-ModeSwitch.Font = Enum.Font.GothamBold
-ModeSwitch.TextSize = 11
-ModeSwitch.BorderSizePixel = 0
-ApplyRadius(ModeSwitch, 6)
-
--- =============================================================================
--- UPDATE UI
--- =============================================================================
-
+-- 7. SIGNAL HANDLING & EVENTS
 local function UpdateUI()
-    local mode = State.mode == "KPS" and "KPS" or "CPS"
-    SliderLabel.Text = "CPS: " .. State.speed
-    ModeBtn.Text = State.mode
-    
-    if State.running then
-        StatusLabel.Text = "🔴 RUNNING"
-        StatusLabel.TextColor3 = Colors.error
-        ManualBtn.Text = "🔴 RELEASE TO STOP"
-        ManualBtn.BackgroundColor3 = Colors.error
-        ManualGlow.Color = Colors.error
-        ToggleBtn.Text = "⏹ STOP"
-        ToggleBtn.BackgroundColor3 = Colors.error
-        ToggleBtn.TextColor3 = Colors.text
-    else
-        StatusLabel.Text = "⏸ IDLE"
-        StatusLabel.TextColor3 = Colors.textDim
-        ManualBtn.Text = "🔴 HOLD TO SPAM"
-        ManualBtn.BackgroundColor3 = Colors.accent
-        ManualGlow.Color = Colors.accent
-        ToggleBtn.Text = "▶ START"
-        ToggleBtn.BackgroundColor3 = Colors.bg3
-        ToggleBtn.TextColor3 = Colors.text
-    end
-    
-    local isManual = State.activation == "Manual"
-    ManualBtn.Visible = isManual
-    ToggleBtn.Visible = not isManual
-    ModeSwitch.Text = isManual and "TOGGLE" or "MANUAL"
-    ModeSwitch.BackgroundColor3 = isManual and Colors.accent or Colors.bg3
+    local labelMode = EngineState.ModeSelection == "KPS" and "KPS" or "CPS"
+    SpeedDisplay.Text = string.format("%d %s", EngineState.TargetSpeed, labelMode)
+    local manualMode = EngineState.ActivationMode == "Manual Spam"
+    ControlPod.Visible = manualMode; ActionButton.Visible = manualMode; StatusBar.Visible = manualMode
+    if EngineState.IsRunning then StatusBar.Text = "MACRO FIRING"; StatusBar.TextColor3 = Color3.fromRGB(160, 160, 160); ActionButton.Text = "HALT CORE"; ActionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80); DiagMacroLabel.Text = "STATUS: RUNNING CORE"; DiagMacroLabel.TextColor3 = Color3.fromRGB(160, 160, 160) else StatusBar.Text = "WORKFLOW IDLE"; StatusBar.TextColor3 = Color3.fromRGB(150, 150, 150); ActionButton.Text = "ACTIVATE"; ActionButton.BackgroundColor3 = Color3.fromRGB(120, 120, 120); DiagMacroLabel.Text = "STATUS: STANDBY"; DiagMacroLabel.TextColor3 = Color3.fromRGB(150, 150, 150) end
 end
 
--- =============================================================================
--- SLIDER LOGIC
--- =============================================================================
-
-local isDragging = false
-
-local function UpdateSlider(pos)
-    local frac = clamp((pos.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
-    local max = State.lowEnd and 200 or 2500
-    local val = round(1 + (frac * (max - 1)))
-    State.speed = val
-    SliderFill.Size = UDim2.new(frac, 0, 1, 0)
-    SliderBtn.Position = UDim2.new(frac, -8, 0.5, -8)
-    UpdateUI()
-end
-
-SliderBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDragging = true
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        UpdateSlider(input)
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDragging = false
-    end
-end)
-
-SliderTrack.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        UpdateSlider(input)
-    end
-end)
-
--- =============================================================================
--- BUTTON EVENTS
--- =============================================================================
-
-ModeBtn.MouseButton1Click:Connect(function()
-    State.mode = State.mode == "KPS" and "CPS" or "KPS"
-    UpdateUI()
-end)
-
-ManualBtn.MouseButton1Down:Connect(function()
-    if State.activation == "Manual" then
-        StartSpam()
-        UpdateUI()
-    end
-end)
-
-ManualBtn.MouseButton1Up:Connect(function()
-    if State.activation == "Manual" then
-        StopSpam()
-        UpdateUI()
-    end
-end)
-
-ManualBtn.MouseLeave:Connect(function()
-    if State.activation == "Manual" and State.running then
-        StopSpam()
-        UpdateUI()
-    end
-end)
-
-ToggleBtn.MouseButton1Click:Connect(function()
-    if State.activation == "Toggle" then
-        if State.running then StopSpam() else StartSpam() end
-        UpdateUI()
-    end
-end)
-
-ModeSwitch.MouseButton1Click:Connect(function()
-    if State.running then StopSpam() end
-    State.activation = State.activation == "Manual" and "Toggle" or "Manual"
-    UpdateUI()
-end)
-
-BindBtn.MouseButton1Click:Connect(function()
-    State.binding = true
-    BindBtn.Text = "..."
-    BindBtn.BackgroundColor3 = Colors.warning
-    ConsoleText.Text = "⚡ Press any key to bind..."
-end)
-
-ParryToggle.MouseButton1Click:Connect(function()
-    State.autoParry = not State.autoParry
-    if State.autoParry then
-        ParryToggle.Text = "PARRY: ON"
-        ParryToggle.TextColor3 = Colors.success
-        ParryToggle.BackgroundColor3 = Colors.bg3
-        -- Start parry logic here if needed
-    else
-        ParryToggle.Text = "PARRY: OFF"
-        ParryToggle.TextColor3 = Colors.textDim
-    end
-end)
-
+-- LOGIC CONNECTIONS
 TitleLabel.MouseButton1Click:Connect(function()
-    State.collapsed = not State.collapsed
-    local size = State.collapsed and UDim2.new(0, 200, 0, 42) or UDim2.new(0, 480, 0, 380)
-    Animate(Main, {Size = size})
-    Content.Visible = not State.collapsed
+    EngineState.Collapsed = not EngineState.Collapsed
+    local targetSize = EngineState.Collapsed and UDim2.new(0, 180, 0, 42) or UDim2.new(0, 500, 0, 360)
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = targetSize}):Play()
+    local v = not EngineState.Collapsed; ModeBtn.Visible = v; SwitchContainer.Visible = v; SliderTrack.Visible = v; SpeedDisplay.Visible = v; ParryBtn.Visible = v; DiagPanel.Visible = v
 end)
 
--- =============================================================================
--- KEYBIND
--- =============================================================================
+local function AnimateSwitch(isOn)
+    local targetPos = isOn and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)
+    local targetColor = isOn and Color3.fromRGB(160, 160, 160) or Color3.fromRGB(65, 65, 65)
+    TweenService:Create(ToggleThumb, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+    TweenService:Create(ToggleTrack, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetColor}):Play()
+end
 
-UIS.InputBegan:Connect(function(input, gp)
-    if State.binding and input.KeyCode ~= Enum.KeyCode.Unknown then
-        State.spamKey = input.KeyCode
-        State.binding = false
-        BindBtn.Text = "BIND"
-        BindBtn.BackgroundColor3 = Colors.bg3
-        KeyLabel.Text = "KEY: " .. input.KeyCode.Name
-        ConsoleText.Text = "⚡ Bound to " .. input.KeyCode.Name
-        return
-    end
-    
-    if gp then return end
-    
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        State.visible = not State.visible
-        Main.Visible = State.visible
-    end
-    
-    if State.activation == "Toggle" and input.KeyCode == State.spamKey then
-        if State.running then StopSpam() else StartSpam() end
-        UpdateUI()
-    end
+local IsDragging = false
+local function UpdateSlider(inputObj)
+    local fraction = clamp((inputObj.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
+    local maxLimit = EngineState.LowEndMode and 200 or 2500
+    local calculated = round(1 + (fraction * (maxLimit - 1)))
+    EngineState.TargetSpeed = calculated
+    SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
+    SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
+    UpdateUI()
+end
+
+SliderButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then IsDragging = true end end)
+UserInputService.InputChanged:Connect(function(input) if IsDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then UpdateSlider(input) end end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then IsDragging = false end end)
+
+-- [BINDING & EVENTS]
+local function BindChassisPosition(chassisFrame, elementList)
+    local offsets = {}
+    for _, el in ipairs(elementList) do offsets[el] = el.Position - chassisFrame.Position end
+    chassisFrame:GetPropertyChangedSignal("Position"):Connect(function() local basePos = chassisFrame.Position for el, originalOffset in pairs(offsets) do el.Position = basePos + originalOffset end end)
+end
+
+BindChassisPosition(MainFrame, {TitleLabel, ModeBtn, SwitchContainer, SliderTrack, SpeedDisplay, ParryBtn, DiagPanel})
+BindChassisPosition(ControlPod, {ActionButton, StatusBar})
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if EngineState.IsBinding then if input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode ~= Enum.KeyCode.RightShift then EngineState.RuntimeHotkey = input.KeyCode; EngineState.ActivationMode = "Hotkey"; EngineState.IsBinding = false; SwitchLabel.Text = "[" .. input.KeyCode.Name .. "]"; DiagKeyLabel.Text = "BIND REGISTER: [" .. input.KeyCode.Name .. "]"; UpdateUI() end return end
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then EngineState.ConfigVisible = not EngineState.ConfigVisible; ConfigCanvas.Visible = EngineState.ConfigVisible end
+    if EngineState.RuntimeHotkey and input.KeyCode == EngineState.RuntimeHotkey then if EngineState.ActivationMode == "Hotkey" then ToggleEngine(); UpdateUI() end end
 end)
 
--- =============================================================================
--- BLADE BALL SPECIFIC BYPASSES
--- =============================================================================
-
--- 1. Disable HTTP checks
-pcall(function()
-    local old_HttpGet = game.HttpGet
-    game.HttpGet = function(...)
-        if ... and type(...) == "string" and ...:find("blade") then
-            return "{}"
-        end
-        return old_HttpGet(...)
-    end
-end)
-
--- 2. Break IsA checks for ScreenGui
-pcall(function()
-    local old_IsA = Instance.IsA
-    Instance.IsA = function(self, className)
-        if className == "ScreenGui" and self == SG then
-            return false
-        end
-        return old_IsA(self, className)
-    end
-end)
-
--- 3. Hide from FindFirstChild
-pcall(function()
-    local old_FindFirstChild = Instance.FindFirstChild
-    Instance.FindFirstChild = function(self, name, ...)
-        if name == "VortexUI" or name == "Vortex" then
-            return nil
-        end
-        return old_FindFirstChild(self, name, ...)
-    end
-end)
-
--- 4. Break check for specific UI names
-pcall(function()
-    local old_GetChildren = Instance.GetChildren
-    Instance.GetChildren = function(self)
-        local children = old_GetChildren(self)
-        local filtered = {}
-        for _, child in ipairs(children) do
-            if child ~= SG and child ~= HiddenStorage then
-                table.insert(filtered, child)
-            end
-        end
-        return filtered
-    end
-end)
-
--- =============================================================================
--- INIT
--- =============================================================================
+ActionButton.MouseButton1Click:Connect(function() if EngineState.ActivationMode == "Manual Spam" then ToggleEngine(); UpdateUI() end end)
+ModeBtn.MouseButton1Click:Connect(function() EngineState.ModeSelection = EngineState.ModeSelection == "KPS" and "CPS" or "KPS"; ModeBtn.Text = EngineState.ModeSelection == "KPS" and "MODE: KPS" or "MODE: CPS"; UpdateUI() end)
+ToggleTrack.MouseButton1Click:Connect(function() if EngineState.ActivationMode == "Manual Spam" then EngineState.IsBinding = true; EngineState.ActivationMode = "Hotkey"; SwitchLabel.Text = "PRESS KEY"; AnimateSwitch(true); UpdateUI() else if EngineState.IsRunning then StopLoop() end; EngineState.ActivationMode = "Manual Spam"; EngineState.RuntimeHotkey = nil; EngineState.IsBinding = false; SwitchLabel.Text = "KEYBIND"; DiagKeyLabel.Text = "BIND REGISTER: NONE"; AnimateSwitch(false); UpdateUI() end end)
+ParryBtn.MouseButton1Click:Connect(function() EngineState.AutoParryActive = not EngineState.AutoParryActive; if EngineState.AutoParryActive then ParryBtn.Text = "AUTO PARRY: ACTIVE"; ParryBtn.TextColor3 = Color3.fromRGB(160, 160, 160); DiagParryLabel.Text = "DEFENSE MATRIX: ACTIVE"; DiagParryLabel.TextColor3 = Color3.fromRGB(160, 160, 160); StartParryTracking() else ParryBtn.Text = "AUTO PARRY: DISABLED"; ParryBtn.TextColor3 = Color3.fromRGB(120, 120, 120); DiagParryLabel.Text = "DEFENSE MATRIX: DISENGAGED"; DiagParryLabel.TextColor3 = Color3.fromRGB(150, 150, 150); StopParryTracking() end end)
 
 UpdateUI()
-ConsoleText.Text = "⚡ Vortex Engine loaded"
-print("🌊 Vortex Engine loaded!")
-print("📌 Mode: " .. State.mode)
-print("📌 CPS: " .. State.speed)
-print("📌 Key: " .. State.spamKey.Name)
-print("📌 RightShift to toggle UI")
-print("🛡️ Blade Ball detection bypassed")
