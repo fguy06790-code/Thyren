@@ -1,152 +1,287 @@
--- =============================================================================
--- THYREN BLADE BALL - GUARANTEED VISIBLE VERSION
--- =============================================================================
+--[[
+    =============================================================================
+    THYREN - Blade Ball
+    
+    A lightweight, executor-friendly auto-parry and macro utility
+    designed for Blade Ball on Roblox.
+    
+    Features:
+        - Predictive auto-parry with no cooldown
+        - Distance-based fallback parry mode
+        - Configurable KPS/CPS macro spammer
+        - Modern dark UI with UICorner styling
+        - Hotkey binding system
+        - Real-time ball tracking diagnostics
+    
+    Repository: https://github.com/yourname/thyren
+    =============================================================================
 
+    MIT License
+
+    Copyright (c) 2024 Thyren
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+--]]
+
+--------------------------------------------------------------------------------
 -- Services
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
+--------------------------------------------------------------------------------
+local Players            = game:GetService("Players")
+local CoreGui            = game:GetService("CoreGui")
+local TweenService       = game:GetService("TweenService")
+local RunService         = game:GetService("RunService")
+local UserInputService   = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
--- Destroy old
-pcall(function() game.CoreGui:FindFirstChild("ThyrenUI"):Destroy() end)
-pcall(function() LocalPlayer.PlayerGui:FindFirstChild("ThyrenUI"):Destroy() end)
+--------------------------------------------------------------------------------
+-- Player References
+--------------------------------------------------------------------------------
+local LocalPlayer = Players.LocalPlayer
+local PlayerName  = LocalPlayer.Name
 
--- Create ScreenGui with ALL properties that help visibility
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "ThyrenUI"
-Gui.ResetOnSpawn = false
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-Gui.IgnoreGuiInset = true
-Gui.DisplayOrder = 9999
-Gui.Enabled = true
+--------------------------------------------------------------------------------
+-- Cleanup: Remove any existing instance
+--------------------------------------------------------------------------------
+if CoreGui:FindFirstChild("ThyrenUI") then
+    CoreGui:FindFirstChild("ThyrenUI"):Destroy()
+end
 
--- Try PlayerGui first (most executors allow this)
-local success, err = pcall(function()
-    Gui.Parent = LocalPlayer.PlayerGui
-end)
+--------------------------------------------------------------------------------
+-- ScreenGui Setup (CoreGui only)
+--------------------------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name              = "ThyrenUI"
+ScreenGui.ResetOnSpawn      = false
+ScreenGui.ZIndexBehavior    = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset    = true
+ScreenGui.DisplayOrder      = 9999
+ScreenGui.Enabled           = true
+ScreenGui.Parent            = CoreGui
 
--- Fallback to CoreGui
-if not success or not Gui.Parent then
-    pcall(function()
-        Gui.Parent = game.CoreGui
+--------------------------------------------------------------------------------
+-- Configuration State
+--------------------------------------------------------------------------------
+local Config = {
+    -- Macro
+    IsRunning    = false,
+    TargetSpeed  = 10,
+    Mode         = "KPS",   -- "KPS" or "CPS"
+    Activation   = "Manual", -- "Manual", "Hotkey", or "Binding"
+    Hotkey       = nil,
+    
+    -- Parry
+    AutoParry    = false,
+    Predictive   = true,
+    Threshold    = 28,
+    Buffer       = 0.05,
+    
+    -- UI
+    Visible      = true,
+    ToggleKey    = Enum.KeyCode.RightShift,
+}
+
+--------------------------------------------------------------------------------
+-- Runtime Variables
+--------------------------------------------------------------------------------
+local MacroConnection   = nil
+local ParryConnection   = nil
+local LastFireTime      = 0
+local CachedBall        = nil
+local LastBallCheckTime = 0
+
+--------------------------------------------------------------------------------
+-- Color Palette
+--------------------------------------------------------------------------------
+local Palette = {
+    Background    = Color3.fromRGB(15, 15, 20),
+    Surface       = Color3.fromRGB(22, 22, 28),
+    Raised        = Color3.fromRGB(32, 32, 40),
+    Hover         = Color3.fromRGB(42, 42, 52),
+    Pressed       = Color3.fromRGB(28, 28, 35),
+    Accent        = Color3.fromRGB(120, 120, 145),
+    AccentLight   = Color3.fromRGB(160, 160, 185),
+    TextPrimary   = Color3.fromRGB(225, 225, 235),
+    TextSecondary = Color3.fromRGB(135, 135, 155),
+    TextMuted     = Color3.fromRGB(85, 85, 105),
+    Border        = Color3.fromRGB(45, 45, 60),
+    Success       = Color3.fromRGB(75, 195, 115),
+    Warning       = Color3.fromRGB(225, 165, 55),
+    ParryActive   = Color3.fromRGB(25, 45, 30),
+}
+
+--------------------------------------------------------------------------------
+-- UI Utility Functions
+--------------------------------------------------------------------------------
+
+--- Adds rounded corners to a GUI element
+---@param instance Instance
+---@param radius number?
+---@return UICorner
+local function ApplyCorner(instance, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 8)
+    corner.Parent = instance
+    return corner
+end
+
+--- Adds a stroke border to a GUI element
+---@param instance Instance
+---@param color Color3?
+---@param thickness number?
+---@return UIStroke
+local function ApplyStroke(instance, color, thickness)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color    = color or Palette.Border
+    stroke.Thickness = thickness or 1
+    stroke.Parent   = instance
+    return stroke
+end
+
+--- Creates a simple hover effect for a button
+---@param button TextButton
+---@param baseColor Color3
+local function ApplyHoverEffect(button, baseColor)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.12), {
+            BackgroundColor3 = Palette.Hover
+        }):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.15), {
+            BackgroundColor3 = baseColor
+        }):Play()
     end)
 end
 
--- Final fallback - create a new folder in PlayerGui
-if not Gui.Parent then
-    local folder = Instance.new("Folder")
-    folder.Parent = LocalPlayer.PlayerGui
-    Gui.Parent = folder
-end
+--------------------------------------------------------------------------------
+-- Macro System
+--------------------------------------------------------------------------------
 
--- If STILL not parented, something is very wrong - abort
-if not Gui.Parent then
-    return
-end
-
--- =============================================================================
--- STATE
--- =============================================================================
-local State = {
-    Running = false,
-    Speed = 10,
-    Mode = "KPS",
-    Activation = "Manual",
-    Hotkey = nil,
-    Binding = false,
-    AutoParry = false,
-    Threshold = 28,
-    Predictive = true,
-    Buffer = 0.05,
-    Visible = true,
-    Collapsed = false
-}
-
-local MacroConn = nil
-local ParryConn = nil
-local LastFire = 0
-local CachedBall = nil
-local LastBallCheck = 0
-
--- =============================================================================
--- MACRO SYSTEM
--- =============================================================================
-local function FireKey()
-    if State.Mode == "KPS" then
+--- Fires a single key/mouse input based on current mode
+local function FireInput()
+    if Config.Mode == "KPS" then
         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
     else
-        local m = UserInputService:GetMouseLocation()
-        VirtualInputManager:SendMouseButtonEvent(m.X, m.Y, 0, true, game, 0)
-        VirtualInputManager:SendMouseButtonEvent(m.X, m.Y, 0, false, game, 0)
+        local mousePos = UserInputService:GetMouseLocation()
+        VirtualInputManager:SendMouseButtonEvent(mousePos.X, mousePos.Y, 0, true, game, 0)
+        VirtualInputManager:SendMouseButtonEvent(mousePos.X, mousePos.Y, 0, false, game, 0)
     end
 end
 
-local function MacroLoop()
-    if not State.Running then return end
-    local now = os.clock()
-    if State.Speed >= 60 then
-        FireKey()
-        FireKey()
-    elseif (now - LastFire) >= (1 / State.Speed) then
-        LastFire = now
-        FireKey()
+--- Main macro loop, called every frame
+local function MacroTick()
+    if not Config.IsRunning then return end
+    
+    local currentTime = os.clock()
+    
+    -- High speed: double tap per frame
+    if Config.TargetSpeed >= 60 then
+        FireInput()
+        FireInput()
+    -- Normal: rate limited
+    elseif (currentTime - LastFireTime) >= (1 / Config.TargetSpeed) then
+        LastFireTime = currentTime
+        FireInput()
     end
 end
 
+--- Starts the macro
 local function StartMacro()
-    State.Running = true
-    LastFire = os.clock()
-    if MacroConn then MacroConn:Disconnect() end
-    MacroConn = RunService.PreRender:Connect(MacroLoop)
+    Config.IsRunning = true
+    LastFireTime = os.clock()
+    
+    if MacroConnection then
+        MacroConnection:Disconnect()
+    end
+    
+    MacroConnection = RunService.PreRender:Connect(MacroTick)
 end
 
+--- Stops the macro
 local function StopMacro()
-    State.Running = false
-    if MacroConn then MacroConn:Disconnect() MacroConn = nil end
+    Config.IsRunning = false
+    
+    if MacroConnection then
+        MacroConnection:Disconnect()
+        MacroConnection = nil
+    end
 end
 
--- =============================================================================
--- BALL FINDER
--- =============================================================================
-local function FindBall()
-    local now = os.clock()
-    if CachedBall and CachedBall.Parent and (now - LastBallCheck) < 0.08 then
+--- Toggles macro on/off
+local function ToggleMacro()
+    if Config.IsRunning then
+        StopMacro()
+    else
+        StartMacro()
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Ball Detection System
+--------------------------------------------------------------------------------
+
+--- Finds the active ball targeting the local player
+---@return BasePart?
+local function FindActiveBall()
+    local currentTime = os.clock()
+    
+    -- Use cached ball if recent and valid
+    if CachedBall and CachedBall.Parent and (currentTime - LastBallCheckTime) < 0.08 then
         return CachedBall
     end
-    LastBallCheck = now
+    
+    LastBallCheckTime = currentTime
     CachedBall = nil
     
-    local name = LocalPlayer.Name
-    
-    -- Check workspace directly
-    for _, v in pairs(workspace:GetChildren()) do
-        if v:IsA("BasePart") and v.Name:lower() == "ball" then
-            local t = v:GetAttribute("target") or v:GetAttribute("Target")
-            if not t then
-                local tv = v:FindFirstChild("target") or v:FindFirstChild("Target")
-                if tv then t = tv.Value end
+    -- Method 1: Direct workspace scan
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("BasePart") and obj.Name:lower() == "ball" then
+            local target = obj:GetAttribute("target") or obj:GetAttribute("Target")
+            
+            if not target then
+                local targetValue = obj:FindFirstChild("target") or obj:FindFirstChild("Target")
+                if targetValue then
+                    target = targetValue.Value
+                end
             end
-            if t == nil or t == name then
-                CachedBall = v
-                return v
+            
+            -- Ball is untargeted or targeting us
+            if target == nil or target == PlayerName then
+                CachedBall = obj
+                return obj
             end
         end
     end
     
-    -- Check folders
-    for _, folderName in {"Balls", "Projectiles"} do
-        local f = workspace:FindFirstChild(folderName)
-        if f then
-            for _, v in pairs(f:GetChildren()) do
-                if v:IsA("BasePart") then
-                    local t = v:GetAttribute("target") or v:GetAttribute("Target")
-                    if t == nil or t == name then
-                        CachedBall = v
-                        return v
+    -- Method 2: Check common folder names
+    local folderNames = { "Balls", "Projectiles" }
+    for _, folderName in ipairs(folderNames) do
+        local folder = workspace:FindFirstChild(folderName)
+        if folder then
+            for _, obj in pairs(folder:GetChildren()) do
+                if obj:IsA("BasePart") then
+                    local target = obj:GetAttribute("target") or obj:GetAttribute("Target")
+                    if target == nil or target == PlayerName then
+                        CachedBall = obj
+                        return obj
                     end
                 end
             end
@@ -156,53 +291,84 @@ local function FindBall()
     return nil
 end
 
-local function BallSpeed(ball)
+--- Calculates the speed of a ball in studs per second
+---@param ball BasePart
+---@return number
+local function GetBallSpeed(ball)
     if not ball then return 0 end
-    local v = ball.AssemblyLinearVelocity
-    return (v.X*v.X + v.Y*v.Y + v.Z*v.Z)^0.5
+    local velocity = ball.AssemblyLinearVelocity
+    return (velocity.X * velocity.X + velocity.Y * velocity.Y + velocity.Z * velocity.Z) ^ 0.5
 end
 
-local function TimeToImpact(ball, root)
-    if not ball or not root then return 999 end
-    local spd = BallSpeed(ball)
-    if spd < 1 then return 999 end
-    local dir = root.Position - ball.Position
-    local dist = dir.Magnitude
-    local dot = ball.AssemblyLinearVelocity.X*dir.X + ball.AssemblyLinearVelocity.Y*dir.Y + ball.AssemblyLinearVelocity.Z*dir.Z
-    if dot <= 0 then return 999 end
-    return dist / (dot / dist)
+--- Calculates estimated time until ball reaches target
+---@param ball BasePart
+---@param rootPart BasePart
+---@return number
+local function CalculateTimeToImpact(ball, rootPart)
+    if not ball or not rootPart then return math.huge end
+    
+    local speed = GetBallSpeed(ball)
+    if speed < 1 then return math.huge end
+    
+    local direction = rootPart.Position - ball.Position
+    local distance  = direction.Magnitude
+    local velocity  = ball.AssemblyLinearVelocity
+    
+    -- Project velocity onto direction vector
+    local dotProduct = velocity.X * direction.X 
+                     + velocity.Y * direction.Y 
+                     + velocity.Z * direction.Z
+    
+    -- Ball moving away
+    if dotProduct <= 0 then return math.huge end
+    
+    return distance / (dotProduct / distance)
 end
 
--- =============================================================================
--- AUTO PARRY
--- =============================================================================
-local function StartParry()
-    if ParryConn then ParryConn:Disconnect() end
-    ParryConn = RunService.Heartbeat:Connect(function()
-        if not State.AutoParry then return end
-        local char = LocalPlayer.Character
-        if not char then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if not root or not hum or hum.Health <= 0 then return end
+--------------------------------------------------------------------------------
+-- Auto Parry System
+--------------------------------------------------------------------------------
+
+--- Starts the auto-parry tracking loop
+local function StartAutoParry()
+    if ParryConnection then
+        ParryConnection:Disconnect()
+    end
+    
+    ParryConnection = RunService.Heartbeat:Connect(function()
+        if not Config.AutoParry then return end
         
-        local ball = FindBall()
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        
+        if not rootPart or not humanoid or humanoid.Health <= 0 then return end
+        
+        local ball = FindActiveBall()
         if not ball then return end
         
-        local dist = (ball.Position - root.Position).Magnitude
-        local spd = BallSpeed(ball)
-        local doParry = false
+        local distance     = (ball.Position - rootPart.Position).Magnitude
+        local ballSpeed    = GetBallSpeed(ball)
+        local shouldParry  = false
         
-        if State.Predictive then
-            local tti = TimeToImpact(ball, root)
-            local window = State.Buffer + (0.02 / (spd * 0.01 + 1))
-            doParry = tti <= window
+        if Config.Predictive then
+            -- Predictive mode: parry based on time-to-impact
+            local timeToImpact  = CalculateTimeToImpact(ball, rootPart)
+            local reactionWindow = Config.Buffer + (0.02 / (ballSpeed * 0.01 + 1))
+            shouldParry = timeToImpact <= reactionWindow
         else
-            local thresh = math.clamp(State.Threshold + (spd > 50 and spd * 0.15 or 0), 20, 65)
-            doParry = dist <= thresh
+            -- Distance mode: parry when ball enters threshold range
+            local dynamicThreshold = Config.Threshold
+            if ballSpeed > 50 then
+                dynamicThreshold = dynamicThreshold + (ballSpeed * 0.15)
+            end
+            dynamicThreshold = math.clamp(dynamicThreshold, 20, 65)
+            shouldParry = distance <= dynamicThreshold
         end
         
-        if doParry then
+        if shouldParry then
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
             task.delay(0.03, function()
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
@@ -211,616 +377,525 @@ local function StartParry()
     end)
 end
 
-local function StopParry()
-    if ParryConn then ParryConn:Disconnect() ParryConn = nil end
-end
-
--- =============================================================================
--- COLORS
--- =============================================================================
-local C = {
-    BG = Color3.fromRGB(18, 18, 22),
-    Surface = Color3.fromRGB(25, 25, 30),
-    Raised = Color3.fromRGB(35, 35, 42),
-    Hover = Color3.fromRGB(45, 45, 55),
-    Press = Color3.fromRGB(30, 30, 36),
-    Accent = Color3.fromRGB(130, 130, 150),
-    AccentBright = Color3.fromRGB(170, 170, 190),
-    Text = Color3.fromRGB(230, 230, 240),
-    TextDim = Color3.fromRGB(140, 140, 160),
-    TextMuted = Color3.fromRGB(90, 90, 110),
-    Border = Color3.fromRGB(50, 50, 65),
-    Green = Color3.fromRGB(80, 200, 120),
-    Orange = Color3.fromRGB(230, 170, 60),
-}
-
--- =============================================================================
--- UI HELPERS
--- =============================================================================
-local function Corner(parent, r)
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, r or 8)
-    c.Parent = parent
-    return c
-end
-
-local function Stroke(parent, color, thick)
-    local s = Instance.new("UIStroke")
-    s.Color = color or C.Border
-    s.Thickness = thick or 1
-    s.Transparency = 0.3
-    s.Parent = parent
-    return s
-end
-
-local function Gradient(parent, rot)
-    local g = Instance.new("UIGradient")
-    g.Rotation = rot or 180
-    g.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0,0,0))
-    g.Transparency = NumberSequence.new(0.96, 0.9)
-    g.Parent = parent
-    return g
-end
-
-local function Hover(btn, base, hov, prs)
-    local b = base or btn.BackgroundColor3
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = hov or C.Hover}):Play()
-    end)
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = b}):Play()
-    end)
-    btn.MouseButton1Down:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.06), {BackgroundColor3 = prs or C.Press}):Play()
-    end)
-    btn.MouseButton1Up:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = hov or C.Hover}):Play()
-    end)
-end
-
-local function MakeFrame(props)
-    local f = Instance.new("Frame")
-    f.Name = props.Name or "Frame"
-    f.Size = props.Size or UDim2.new(1,0,1,0)
-    f.Position = props.Position or UDim2.new(0,0,0,0)
-    f.BackgroundColor3 = props.Color or C.Surface
-    f.BackgroundTransparency = props.Transparency or 0
-    f.ZIndex = props.Z or 1
-    f.Visible = true
-    f.Parent = props.Parent or Gui
-    if props.Radius then Corner(f, props.Radius) end
-    if props.Border then Stroke(f, props.Border) end
-    if props.Gradient then Gradient(f) end
-    return f
-end
-
-local function MakeButton(props)
-    local b = Instance.new("TextButton")
-    b.Name = props.Name or "Button"
-    b.Size = props.Size or UDim2.new(0,100,0,30)
-    b.Position = props.Position or UDim2.new(0,0,0,0)
-    b.BackgroundColor3 = props.Color or C.Raised
-    b.Text = props.Text or ""
-    b.TextColor3 = props.TextColor or C.Text
-    b.Font = props.Font or Enum.Font.GothamBold
-    b.TextSize = props.TextSize or 12
-    b.ZIndex = props.Z or 2
-    b.Visible = true
-    b.AutoButtonColor = false
-    b.Parent = props.Parent or Gui
-    if props.Radius then Corner(b, props.Radius) end
-    if props.Border then Stroke(b, props.Border) end
-    if props.Hover ~= false then Hover(b, props.Color) end
-    return b
-end
-
-local function MakeLabel(props)
-    local l = Instance.new("TextLabel")
-    l.Name = props.Name or "Label"
-    l.Size = props.Size or UDim2.new(0,100,0,20)
-    l.Position = props.Position or UDim2.new(0,0,0,0)
-    l.BackgroundTransparency = 1
-    l.Text = props.Text or ""
-    l.TextColor3 = props.TextColor or C.Text
-    l.Font = props.Font or Enum.Font.GothamBold
-    l.TextSize = props.TextSize or 12
-    l.TextXAlignment = props.XAlign or Enum.TextXAlignment.Left
-    l.ZIndex = props.Z or 3
-    l.Visible = true
-    l.Parent = props.Parent or Gui
-    return l
-end
-
--- =============================================================================
--- BUILD UI
--- =============================================================================
-
--- Main container - holds everything, can be hidden
-local Container = MakeFrame({
-    Name = "Container",
-    Size = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1,
-    Parent = Gui
-})
-
--- Main panel
-local Main = MakeFrame({
-    Name = "Main",
-    Size = UDim2.new(0, 420, 0, 340),
-    Position = UDim2.new(0.5, -210, 0.5, -170),
-    Color = C.BG,
-    Radius = 12,
-    Border = C.Border,
-    Gradient = true,
-    Parent = Container
-})
-Main.Active = true
-Main.Draggable = true
-
--- Inner glow border
-local InnerStroke = Stroke(Main, Color3.fromRGB(60, 60, 80), 1)
-InnerStroke.Transparency = 0.5
-
--- Title bar
-local TitleBar = MakeFrame({
-    Name = "TitleBar",
-    Size = UDim2.new(1, 0, 0, 36),
-    Position = UDim2.new(0, 0, 0, 0),
-    Color = C.Surface,
-    Radius = 12,
-    Parent = Main
-})
-Gradient(TitleBar)
-
--- Cover bottom corners of title bar
-local TitleCover = MakeFrame({
-    Size = UDim2.new(1, 0, 0, 12),
-    Position = UDim2.new(0, 0, 1, -12),
-    Color = C.Surface,
-    Parent = TitleBar
-})
-
--- Title text
-local Title = MakeLabel({
-    Name = "Title",
-    Size = UDim2.new(0, 100, 1, 0),
-    Position = UDim2.new(0, 14, 0, 0),
-    Text = "THYREN",
-    TextColor = C.Text,
-    Font = Enum.Font.GothamBlack,
-    TextSize = 14,
-    Parent = TitleBar
-})
-
--- Game label
-local GameTag = MakeLabel({
-    Name = "GameTag",
-    Size = UDim2.new(0, 80, 1, 0),
-    Position = UDim2.new(1, -90, 0, 0),
-    Text = "BLADE BALL",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamMedium,
-    TextSize = 9,
-    XAlign = Enum.TextXAlignment.Right,
-    Parent = TitleBar
-})
-
--- Content frame
-local Content = MakeFrame({
-    Name = "Content",
-    Size = UDim2.new(1, -20, 1, -46),
-    Position = UDim2.new(0, 10, 0, 40),
-    BackgroundTransparency = 1,
-    Parent = Main
-})
-
--- Mode button
-local ModeBtn = MakeButton({
-    Name = "ModeBtn",
-    Size = UDim2.new(0.48, 0, 0, 32),
-    Position = UDim2.new(0, 0, 0, 0),
-    Color = C.Raised,
-    Text = "MODE: KPS",
-    TextColor = C.Text,
-    Font = Enum.Font.GothamBold,
-    TextSize = 11,
-    Radius = 8,
-    Parent = Content
-})
-
--- Keybind button
-local BindBtn = MakeButton({
-    Name = "BindBtn",
-    Size = UDim2.new(0.48, 0, 0, 32),
-    Position = UDim2.new(0.52, 0, 0, 0),
-    Color = C.Raised,
-    Text = "KEYBIND",
-    TextColor = C.Text,
-    Font = Enum.Font.GothamBold,
-    TextSize = 11,
-    Radius = 8,
-    Parent = Content
-})
-
--- Speed slider track
-local SpeedTrack = MakeFrame({
-    Name = "SpeedTrack",
-    Size = UDim2.new(1, 0, 0, 6),
-    Position = UDim2.new(0, 0, 0, 48),
-    Color = Color3.fromRGB(30, 30, 38),
-    Radius = 3,
-    Parent = Content
-})
-
--- Speed fill
-local SpeedFill = MakeFrame({
-    Name = "SpeedFill",
-    Size = UDim2.new(0.004, 0, 1, 0),
-    Position = UDim2.new(0, 0, 0, 0),
-    Color = C.Accent,
-    Radius = 3,
-    Parent = SpeedTrack
-})
-
--- Speed handle
-local SpeedHandle = MakeButton({
-    Name = "SpeedHandle",
-    Size = UDim2.new(0, 14, 0, 14),
-    Position = UDim2.new(0.004, -7, 0.5, -7),
-    Color = C.AccentBright,
-    Text = "",
-    Radius = 7,
-    Hover = false,
-    Parent = SpeedTrack
-})
-Stroke(SpeedHandle, Color3.fromRGB(200, 200, 220), 1)
-
--- Speed label
-local SpeedLabel = MakeLabel({
-    Name = "SpeedLabel",
-    Size = UDim2.new(0, 80, 0, 20),
-    Position = UDim2.new(1, -80, 0, 38),
-    Text = "10 KPS",
-    TextColor = C.TextDim,
-    Font = Enum.Font.GothamBold,
-    TextSize = 11,
-    XAlign = Enum.TextXAlignment.Right,
-    Parent = Content
-})
-
--- Auto Parry button
-local ParryBtn = MakeButton({
-    Name = "ParryBtn",
-    Size = UDim2.new(1, 0, 0, 36),
-    Position = UDim2.new(0, 0, 0, 70),
-    Color = C.Raised,
-    Text = "AUTO PARRY: OFF",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamBold,
-    TextSize = 12,
-    Radius = 8,
-    Parent = Content
-})
-
--- Predictive + Threshold row
-local PredBtn = MakeButton({
-    Name = "PredBtn",
-    Size = UDim2.new(0.45, 0, 0, 30),
-    Position = UDim2.new(0, 0, 0, 116),
-    Color = C.Raised,
-    Text = "PREDICTIVE: ON",
-    TextColor = C.Green,
-    Font = Enum.Font.GothamBold,
-    TextSize = 10,
-    Radius = 8,
-    Parent = Content
-})
-
-local ThreshLabel = MakeLabel({
-    Name = "ThreshLabel",
-    Size = UDim2.new(0, 70, 0, 20),
-    Position = UDim2.new(0.48, 0, 0, 118),
-    Text = "DIST: 28",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamMedium,
-    TextSize = 9,
-    Parent = Content
-})
-
--- Threshold slider
-local ThreshTrack = MakeFrame({
-    Name = "ThreshTrack",
-    Size = UDim2.new(0.3, 0, 0, 4),
-    Position = UDim2.new(0.7, 0, 0, 128),
-    Color = Color3.fromRGB(30, 30, 38),
-    Radius = 2,
-    Parent = Content
-})
-
-local ThreshFill = MakeFrame({
-    Name = "ThreshFill",
-    Size = UDim2.new(0.3, 0, 1, 0),
-    Color = C.Accent,
-    Radius = 2,
-    Parent = ThreshTrack
-})
-
-local ThreshHandle = MakeButton({
-    Name = "ThreshHandle",
-    Size = UDim2.new(0, 10, 0, 10),
-    Position = UDim2.new(0.3, -5, 0.5, -5),
-    Color = C.AccentBright,
-    Text = "",
-    Radius = 5,
-    Hover = false,
-    Parent = ThreshTrack
-})
-
--- Diagnostics panel
-local DiagPanel = MakeFrame({
-    Name = "DiagPanel",
-    Size = UDim2.new(1, 0, 0, 90),
-    Position = UDim2.new(0, 0, 0, 156),
-    Color = C.Surface,
-    Radius = 8,
-    Border = C.Border,
-    Parent = Content
-})
-Gradient(DiagPanel)
-
-local DiagTitle = MakeLabel({
-    Size = UDim2.new(0, 80, 0, 16),
-    Position = UDim2.new(0, 10, 0, 6),
-    Text = "STATUS",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamBlack,
-    TextSize = 9,
-    Parent = DiagPanel
-})
-
-local DiagLine = MakeFrame({
-    Size = UDim2.new(1, -20, 0, 1),
-    Position = UDim2.new(0, 10, 0, 22),
-    Color = C.Border,
-    Parent = DiagPanel
-})
-DiagLine.BackgroundTransparency = 0.5
-
-local DiagStatus = MakeLabel({
-    Name = "DiagStatus",
-    Size = UDim2.new(1, -20, 0, 16),
-    Position = UDim2.new(0, 10, 0, 28),
-    Text = "● MACRO: IDLE",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamMedium,
-    TextSize = 10,
-    Parent = DiagPanel
-})
-
-local DiagBind = MakeLabel({
-    Name = "DiagBind",
-    Size = UDim2.new(1, -20, 0, 16),
-    Position = UDim2.new(0, 10, 0, 46),
-    Text = "● BIND: NONE",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamMedium,
-    TextSize = 10,
-    Parent = DiagPanel
-})
-
-local DiagParry = MakeLabel({
-    Name = "DiagParry",
-    Size = UDim2.new(1, -20, 0, 16),
-    Position = UDim2.new(0, 10, 0, 64),
-    Text = "● PARRY: OFF",
-    TextColor = C.TextMuted,
-    Font = Enum.Font.GothamMedium,
-    TextSize = 10,
-    Parent = DiagPanel
-})
-
--- Activate button (separate from main for dragging)
-local ActivateBtn = MakeButton({
-    Name = "ActivateBtn",
-    Size = UDim2.new(0, 380, 0, 38),
-    Position = UDim2.new(0.5, -190, 0.5, 180),
-    Color = C.Surface,
-    Text = "ACTIVATE",
-    TextColor = C.Text,
-    Font = Enum.Font.GothamBlack,
-    TextSize = 13,
-    Radius = 10,
-    Border = C.Border,
-    Gradient = true,
-    Parent = Container
-})
-
--- =============================================================================
--- UPDATE UI
--- =============================================================================
-local function Update()
-    local m = State.Mode == "KPS" and "KPS" or "CPS"
-    SpeedLabel.Text = State.Speed .. " " .. m
-    
-    local showActivate = State.Activation == "Manual"
-    ActivateBtn.Visible = showActivate
-    
-    if State.Running then
-        ActivateBtn.Text = "STOP"
-        ActivateBtn.BackgroundColor3 = C.Raised
-        DiagStatus.Text = "● MACRO: RUNNING"
-        DiagStatus.TextColor = C.Green
-    else
-        ActivateBtn.Text = "ACTIVATE"
-        ActivateBtn.BackgroundColor3 = C.Surface
-        DiagStatus.Text = "● MACRO: IDLE"
-        DiagStatus.TextColor = C.TextMuted
+--- Stops the auto-parry tracking loop
+local function StopAutoParry()
+    if ParryConnection then
+        ParryConnection:Disconnect()
+        ParryConnection = nil
     end
 end
 
--- Ball diag loop
+--------------------------------------------------------------------------------
+-- UI Construction
+--------------------------------------------------------------------------------
+
+-- Main container (for toggle visibility)
+local Container = Instance.new("Frame")
+Container.Name                 = "Container"
+Container.Size                 = UDim2.new(1, 0, 1, 0)
+Container.BackgroundTransparency = 1
+Container.Parent               = ScreenGui
+
+-- Main panel
+local MainPanel = Instance.new("Frame")
+MainPanel.Name                 = "MainPanel"
+MainPanel.Size                 = UDim2.new(0, 400, 0, 320)
+MainPanel.Position             = UDim2.new(0.5, -200, 0.5, -160)
+MainPanel.BackgroundColor3     = Palette.Background
+MainPanel.BorderSizePixel      = 0
+MainPanel.Active               = true
+MainPanel.Draggable            = true
+MainPanel.Parent               = Container
+ApplyCorner(MainPanel, 12)
+ApplyStroke(MainPanel, Palette.Border, 1)
+
+-- Title bar background
+local TitleBar = Instance.new("Frame")
+TitleBar.Size                 = UDim2.new(1, 0, 0, 35)
+TitleBar.BackgroundColor3     = Palette.Surface
+TitleBar.BorderSizePixel      = 0
+TitleBar.Parent               = MainPanel
+ApplyCorner(TitleBar, 12)
+
+-- Fix bottom corners of title bar
+local TitleBarFix = Instance.new("Frame")
+TitleBarFix.Size                 = UDim2.new(1, 0, 0, 10)
+TitleBarFix.Position             = UDim2.new(0, 0, 1, -10)
+TitleBarFix.BackgroundColor3     = Palette.Surface
+TitleBarFix.BorderSizePixel      = 0
+TitleBarFix.Parent               = TitleBar
+
+-- Title text
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size                 = UDim2.new(0, 100, 1, 0)
+TitleLabel.Position             = UDim2.new(0, 12, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text                 = "THYREN"
+TitleLabel.TextColor3           = Palette.TextPrimary
+TitleLabel.TextSize             = 14
+TitleLabel.Font                 = Enum.Font.GothamBold
+TitleLabel.TextXAlignment       = Enum.TextXAlignment.Left
+TitleLabel.Parent               = TitleBar
+
+-- Game identifier
+local GameLabel = Instance.new("TextLabel")
+GameLabel.Size                 = UDim2.new(0, 80, 1, 0)
+GameLabel.Position             = UDim2.new(1, -85, 0, 0)
+GameLabel.BackgroundTransparency = 1
+GameLabel.Text                 = "BLADE BALL"
+GameLabel.TextColor3           = Palette.TextMuted
+GameLabel.TextSize             = 9
+GameLabel.Font                 = Enum.Font.GothamMedium
+GameLabel.TextXAlignment       = Enum.TextXAlignment.Right
+GameLabel.Parent               = TitleBar
+
+-- Content area
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size                 = UDim2.new(1, -16, 1, -42)
+ContentFrame.Position             = UDim2.new(0, 8, 0, 38)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent               = MainPanel
+
+--------------------------------------------------------------------------------
+-- Mode Button
+--------------------------------------------------------------------------------
+local ModeButton = Instance.new("TextButton")
+ModeButton.Size                 = UDim2.new(0.48, 0, 0, 30)
+ModeButton.Position             = UDim2.new(0, 0, 0, 0)
+ModeButton.BackgroundColor3     = Palette.Raised
+ModeButton.BorderSizePixel      = 0
+ModeButton.Text                 = "MODE: KPS"
+ModeButton.TextColor3           = Palette.TextPrimary
+ModeButton.TextSize             = 11
+ModeButton.Font                 = Enum.Font.GothamBold
+ModeButton.AutoButtonColor      = false
+ModeButton.Parent               = ContentFrame
+ApplyCorner(ModeButton, 8)
+ApplyHoverEffect(ModeButton, Palette.Raised)
+
+--------------------------------------------------------------------------------
+-- Keybind Button
+--------------------------------------------------------------------------------
+local BindButton = Instance.new("TextButton")
+BindButton.Size                 = UDim2.new(0.48, 0, 0, 30)
+BindButton.Position             = UDim2.new(0.52, 0, 0, 0)
+BindButton.BackgroundColor3     = Palette.Raised
+BindButton.BorderSizePixel      = 0
+BindButton.Text                 = "KEYBIND"
+BindButton.TextColor3           = Palette.TextPrimary
+BindButton.TextSize             = 11
+BindButton.Font                 = Enum.Font.GothamBold
+BindButton.AutoButtonColor      = false
+BindButton.Parent               = ContentFrame
+ApplyCorner(BindButton, 8)
+ApplyHoverEffect(BindButton, Palette.Raised)
+
+--------------------------------------------------------------------------------
+-- Speed Display
+--------------------------------------------------------------------------------
+local SpeedDisplay = Instance.new("TextLabel")
+SpeedDisplay.Size                 = UDim2.new(0, 80, 0, 18)
+SpeedDisplay.Position             = UDim2.new(1, -80, 0, 36)
+SpeedDisplay.BackgroundTransparency = 1
+SpeedDisplay.Text                 = "10 KPS"
+SpeedDisplay.TextColor3           = Palette.TextSecondary
+SpeedDisplay.TextSize             = 11
+SpeedDisplay.Font                 = Enum.Font.GothamBold
+SpeedDisplay.TextXAlignment       = Enum.TextXAlignment.Right
+SpeedDisplay.Parent               = ContentFrame
+
+--------------------------------------------------------------------------------
+-- Speed Slider
+--------------------------------------------------------------------------------
+local SpeedTrack = Instance.new("Frame")
+SpeedTrack.Size                 = UDim2.new(1, 0, 0, 6)
+SpeedTrack.Position             = UDim2.new(0, 0, 0, 45)
+SpeedTrack.BackgroundColor3     = Color3.fromRGB(28, 28, 36)
+SpeedTrack.BorderSizePixel      = 0
+SpeedTrack.Parent               = ContentFrame
+ApplyCorner(SpeedTrack, 3)
+
+local SpeedFill = Instance.new("Frame")
+SpeedFill.Size                 = UDim2.new(0.004, 0, 1, 0)
+SpeedFill.BackgroundColor3     = Palette.Accent
+SpeedFill.BorderSizePixel      = 0
+SpeedFill.Parent               = SpeedTrack
+ApplyCorner(SpeedFill, 3)
+
+local SpeedHandle = Instance.new("TextButton")
+SpeedHandle.Size                 = UDim2.new(0, 14, 0, 14)
+SpeedHandle.Position             = UDim2.new(0.004, -7, 0.5, -7)
+SpeedHandle.BackgroundColor3     = Palette.AccentLight
+SpeedHandle.BorderSizePixel      = 0
+SpeedHandle.Text                 = ""
+SpeedHandle.AutoButtonColor      = false
+SpeedHandle.Parent               = SpeedTrack
+ApplyCorner(SpeedHandle, 7)
+
+--------------------------------------------------------------------------------
+-- Auto Parry Button
+--------------------------------------------------------------------------------
+local ParryButton = Instance.new("TextButton")
+ParryButton.Size                 = UDim2.new(1, 0, 0, 34)
+ParryButton.Position             = UDim2.new(0, 0, 0, 65)
+ParryButton.BackgroundColor3     = Palette.Raised
+ParryButton.BorderSizePixel      = 0
+ParryButton.Text                 = "AUTO PARRY: OFF"
+ParryButton.TextColor3           = Palette.TextMuted
+ParryButton.TextSize             = 12
+ParryButton.Font                 = Enum.Font.GothamBold
+ParryButton.AutoButtonColor      = false
+ParryButton.Parent               = ContentFrame
+ApplyCorner(ParryButton, 8)
+ApplyHoverEffect(ParryButton, Palette.Raised)
+
+--------------------------------------------------------------------------------
+-- Predictive Button
+--------------------------------------------------------------------------------
+local PredictButton = Instance.new("TextButton")
+PredictButton.Size                 = UDim2.new(0.55, 0, 0, 28)
+PredictButton.Position             = UDim2.new(0, 0, 0, 107)
+PredictButton.BackgroundColor3     = Palette.Raised
+PredictButton.BorderSizePixel      = 0
+PredictButton.Text                 = "PREDICTIVE: ON"
+PredictButton.TextColor3           = Palette.Success
+PredictButton.TextSize             = 10
+PredictButton.Font                 = Enum.Font.GothamBold
+PredictButton.AutoButtonColor      = false
+PredictButton.Parent               = ContentFrame
+ApplyCorner(PredictButton, 8)
+ApplyHoverEffect(PredictButton, Palette.Raised)
+
+--------------------------------------------------------------------------------
+-- Threshold Controls
+--------------------------------------------------------------------------------
+local ThresholdLabel = Instance.new("TextLabel")
+ThresholdLabel.Size                 = UDim2.new(0, 50, 0, 18)
+ThresholdLabel.Position             = UDim2.new(0.57, 0, 0, 112)
+ThresholdLabel.BackgroundTransparency = 1
+ThresholdLabel.Text                 = tostring(Config.Threshold)
+ThresholdLabel.TextColor3           = Palette.TextMuted
+ThresholdLabel.TextSize             = 10
+ThresholdLabel.Font                 = Enum.Font.GothamMedium
+ThresholdLabel.Parent               = ContentFrame
+
+local ThresholdTrack = Instance.new("Frame")
+ThresholdTrack.Size                 = UDim2.new(0.35, 0, 0, 4)
+ThresholdTrack.Position             = UDim2.new(0.72, 0, 0, 120)
+ThresholdTrack.BackgroundColor3     = Color3.fromRGB(28, 28, 36)
+ThresholdTrack.BorderSizePixel      = 0
+ThresholdTrack.Parent               = ContentFrame
+ApplyCorner(ThresholdTrack, 2)
+
+local ThresholdFill = Instance.new("Frame")
+ThresholdFill.Size                 = UDim2.new(0.3, 0, 1, 0)
+ThresholdFill.BackgroundColor3     = Palette.Accent
+ThresholdFill.BorderSizePixel      = 0
+ThresholdFill.Parent               = ThresholdTrack
+ApplyCorner(ThresholdFill, 2)
+
+local ThresholdHandle = Instance.new("TextButton")
+ThresholdHandle.Size                 = UDim2.new(0, 10, 0, 10)
+ThresholdHandle.Position             = UDim2.new(0.3, -5, 0.5, -5)
+ThresholdHandle.BackgroundColor3     = Palette.AccentLight
+ThresholdHandle.BorderSizePixel      = 0
+ThresholdHandle.Text                 = ""
+ThresholdHandle.AutoButtonColor      = false
+ThresholdHandle.Parent               = ThresholdTrack
+ApplyCorner(ThresholdHandle, 5)
+
+--------------------------------------------------------------------------------
+-- Diagnostics Panel
+--------------------------------------------------------------------------------
+local DiagPanel = Instance.new("Frame")
+DiagPanel.Size                 = UDim2.new(1, 0, 0, 80)
+DiagPanel.Position             = UDim2.new(0, 0, 0, 145)
+DiagPanel.BackgroundColor3     = Palette.Surface
+DiagPanel.BorderSizePixel      = 0
+DiagPanel.Parent               = ContentFrame
+ApplyCorner(DiagPanel, 8)
+ApplyStroke(DiagPanel, Palette.Border, 1)
+
+local DiagStatusLabel = Instance.new("TextLabel")
+DiagStatusLabel.Size                 = UDim2.new(1, -16, 0, 18)
+DiagStatusLabel.Position             = UDim2.new(0, 8, 0, 10)
+DiagStatusLabel.BackgroundTransparency = 1
+DiagStatusLabel.Text                 = "MACRO: IDLE"
+DiagStatusLabel.TextColor3           = Palette.TextMuted
+DiagStatusLabel.TextSize             = 10
+DiagStatusLabel.Font                 = Enum.Font.GothamMedium
+DiagStatusLabel.TextXAlignment       = Enum.TextXAlignment.Left
+DiagStatusLabel.Parent               = DiagPanel
+
+local DiagBindLabel = Instance.new("TextLabel")
+DiagBindLabel.Size                 = UDim2.new(1, -16, 0, 18)
+DiagBindLabel.Position             = UDim2.new(0, 8, 0, 30)
+DiagBindLabel.BackgroundTransparency = 1
+DiagBindLabel.Text                 = "BIND: NONE"
+DiagBindLabel.TextColor3           = Palette.TextMuted
+DiagBindLabel.TextSize             = 10
+DiagBindLabel.Font                 = Enum.Font.GothamMedium
+DiagBindLabel.TextXAlignment       = Enum.TextXAlignment.Left
+DiagBindLabel.Parent               = DiagPanel
+
+local DiagParryLabel = Instance.new("TextLabel")
+DiagParryLabel.Size                 = UDim2.new(1, -16, 0, 18)
+DiagParryLabel.Position             = UDim2.new(0, 8, 0, 50)
+DiagParryLabel.BackgroundTransparency = 1
+DiagParryLabel.Text                 = "PARRY: OFF"
+DiagParryLabel.TextColor3           = Palette.TextMuted
+DiagParryLabel.TextSize             = 10
+DiagParryLabel.Font                 = Enum.Font.GothamMedium
+DiagParryLabel.TextXAlignment       = Enum.TextXAlignment.Left
+DiagParryLabel.Parent               = DiagPanel
+
+--------------------------------------------------------------------------------
+-- Activate Button (Outside main panel for independent dragging)
+--------------------------------------------------------------------------------
+local ActivateButton = Instance.new("TextButton")
+ActivateButton.Size                 = UDim2.new(0, 360, 0, 36)
+ActivateButton.Position             = UDim2.new(0.5, -180, 0.5, 170)
+ActivateButton.BackgroundColor3     = Palette.Surface
+ActivateButton.BorderSizePixel      = 0
+ActivateButton.Text                 = "ACTIVATE"
+ActivateButton.TextColor3           = Palette.TextPrimary
+ActivateButton.TextSize             = 13
+ActivateButton.Font                 = Enum.Font.GothamBold
+ActivateButton.AutoButtonColor      = false
+ActivateButton.Parent               = Container
+ApplyCorner(ActivateButton, 10)
+ApplyStroke(ActivateButton, Palette.Border, 1)
+ApplyHoverEffect(ActivateButton, Palette.Surface)
+
+--------------------------------------------------------------------------------
+-- UI Update Function
+--------------------------------------------------------------------------------
+local function UpdateUI()
+    -- Speed display
+    local modeSuffix = Config.Mode == "KPS" and "KPS" or "CPS"
+    SpeedDisplay.Text = Config.TargetSpeed .. " " .. modeSuffix
+    
+    -- Show/hide activate button based on activation mode
+    ActivateButton.Visible = (Config.Activation == "Manual")
+    
+    -- Update macro status
+    if Config.IsRunning then
+        ActivateButton.Text = "STOP"
+        ActivateButton.BackgroundColor3 = Palette.Raised
+        DiagStatusLabel.Text = "MACRO: RUNNING"
+        DiagStatusLabel.TextColor3 = Palette.Success
+    else
+        ActivateButton.Text = "ACTIVATE"
+        ActivateButton.BackgroundColor3 = Palette.Surface
+        DiagStatusLabel.Text = "MACRO: IDLE"
+        DiagStatusLabel.TextColor3 = Palette.TextMuted
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Diagnostics Loop
+--------------------------------------------------------------------------------
 task.spawn(function()
     while task.wait(0.3) do
-        if State.AutoParry then
-            local ball = FindBall()
+        if Config.AutoParry then
+            local ball = FindActiveBall()
             if ball then
-                DiagParry.Text = "● PARRY: LOCKED (" .. math.floor(BallSpeed(ball)) .. " spd)"
-                DiagParry.TextColor = C.Green
+                local speed = math.floor(GetBallSpeed(ball))
+                DiagParryLabel.Text = "PARRY: LOCKED " .. speed .. " spd"
+                DiagParryLabel.TextColor3 = Palette.Success
             else
-                DiagParry.Text = "● PARRY: SEARCHING"
-                DiagParry.TextColor = C.Orange
+                DiagParryLabel.Text = "PARRY: SEARCHING"
+                DiagParryLabel.TextColor3 = Palette.Warning
             end
         end
     end
 end)
 
--- =============================================================================
--- EVENTS
--- =============================================================================
+--------------------------------------------------------------------------------
+-- Event Handlers
+--------------------------------------------------------------------------------
 
 -- Mode toggle
-ModeBtn.MouseButton1Click:Connect(function()
-    State.Mode = State.Mode == "KPS" and "CPS" or "KPS"
-    ModeBtn.Text = "MODE: " .. State.Mode
-    Update()
+ModeButton.MouseButton1Click:Connect(function()
+    Config.Mode = Config.Mode == "KPS" and "CPS" or "KPS"
+    ModeButton.Text = "MODE: " .. Config.Mode
+    UpdateUI()
 end)
 
 -- Keybind toggle
-BindBtn.MouseButton1Click:Connect(function()
-    if State.Activation == "Manual" then
-        State.Binding = true
-        State.Activation = "Binding"
-        BindBtn.Text = "PRESS KEY..."
-        BindBtn.TextColor3 = C.Orange
+BindButton.MouseButton1Click:Connect(function()
+    if Config.Activation == "Manual" then
+        Config.Activation = "Binding"
+        BindButton.Text = "PRESS KEY..."
+        BindButton.TextColor3 = Palette.Warning
     else
-        if State.Running then StopMacro() end
-        State.Activation = "Manual"
-        State.Hotkey = nil
-        State.Binding = false
-        BindBtn.Text = "KEYBIND"
-        BindBtn.TextColor3 = C.Text
-        DiagBind.Text = "● BIND: NONE"
-        DiagBind.TextColor = C.TextMuted
-        Update()
+        if Config.IsRunning then
+            StopMacro()
+        end
+        Config.Activation = "Manual"
+        Config.Hotkey = nil
+        BindButton.Text = "KEYBIND"
+        BindButton.TextColor3 = Palette.TextPrimary
+        DiagBindLabel.Text = "BIND: NONE"
+        DiagBindLabel.TextColor3 = Palette.TextMuted
+        UpdateUI()
     end
 end)
 
--- Parry toggle
-ParryBtn.MouseButton1Click:Connect(function()
-    State.AutoParry = not State.AutoParry
-    if State.AutoParry then
-        ParryBtn.Text = "AUTO PARRY: ON"
-        ParryBtn.TextColor3 = C.Green
-        ParryBtn.BackgroundColor3 = Color3.fromRGB(30, 50, 35)
-        StartParry()
+-- Auto parry toggle
+ParryButton.MouseButton1Click:Connect(function()
+    Config.AutoParry = not Config.AutoParry
+    
+    if Config.AutoParry then
+        ParryButton.Text = "AUTO PARRY: ON"
+        ParryButton.TextColor3 = Palette.Success
+        ParryButton.BackgroundColor3 = Palette.ParryActive
+        StartAutoParry()
     else
-        ParryBtn.Text = "AUTO PARRY: OFF"
-        ParryBtn.TextColor3 = C.TextMuted
-        ParryBtn.BackgroundColor3 = C.Raised
-        StopParry()
+        ParryButton.Text = "AUTO PARRY: OFF"
+        ParryButton.TextColor3 = Palette.TextMuted
+        ParryButton.BackgroundColor3 = Palette.Raised
+        StopAutoParry()
     end
-    Update()
+    
+    UpdateUI()
 end)
 
 -- Predictive toggle
-PredBtn.MouseButton1Click:Connect(function()
-    State.Predictive = not State.Predictive
-    PredBtn.Text = "PREDICTIVE: " .. (State.Predictive and "ON" or "OFF")
-    PredBtn.TextColor3 = State.Predictive and C.Green or C.TextMuted
+PredictButton.MouseButton1Click:Connect(function()
+    Config.Predictive = not Config.Predictive
+    PredictButton.Text = "PREDICTIVE: " .. (Config.Predictive and "ON" or "OFF")
+    PredictButton.TextColor3 = Config.Predictive and Palette.Success or Palette.TextMuted
 end)
 
 -- Activate button
-ActivateBtn.MouseButton1Click:Connect(function()
-    if State.Activation == "Manual" then
-        if State.Running then StopMacro() else StartMacro() end
-        Update()
+ActivateButton.MouseButton1Click:Connect(function()
+    if Config.Activation == "Manual" then
+        ToggleMacro()
+        UpdateUI()
     end
 end)
 
--- Speed slider
-local DraggingSpeed = false
-SpeedHandle.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        DraggingSpeed = true
-    end
-end)
-SpeedTrack.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        DraggingSpeed = true
-        local f = math.clamp((i.Position.X - SpeedTrack.AbsolutePosition.X) / SpeedTrack.AbsoluteSize.X, 0, 1)
-        State.Speed = math.floor(1 + f * 2499)
-        SpeedFill.Size = UDim2.new(f, 0, 1, 0)
-        SpeedHandle.Position = UDim2.new(f, -7, 0.5, -7)
-        Update()
+--------------------------------------------------------------------------------
+-- Slider Interaction
+--------------------------------------------------------------------------------
+local IsDraggingSpeed     = false
+local IsDraggingThreshold = false
+
+-- Helper to update speed slider visuals
+local function UpdateSpeedSlider(fraction)
+    fraction = math.clamp(fraction, 0, 1)
+    Config.TargetSpeed = math.floor(1 + fraction * 2499)
+    SpeedFill.Size = UDim2.new(fraction, 0, 1, 0)
+    SpeedHandle.Position = UDim2.new(fraction, -7, 0.5, -7)
+    UpdateUI()
+end
+
+-- Helper to update threshold slider visuals
+local function UpdateThresholdSlider(fraction)
+    fraction = math.clamp(fraction, 0, 1)
+    Config.Threshold = math.floor(10 + fraction * 60)
+    ThresholdFill.Size = UDim2.new(fraction, 0, 1, 0)
+    ThresholdHandle.Position = UDim2.new(fraction, -5, 0.5, -5)
+    ThresholdLabel.Text = tostring(Config.Threshold)
+end
+
+-- Speed handle input
+SpeedHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        IsDraggingSpeed = true
     end
 end)
 
--- Threshold slider
-local DraggingThresh = false
-ThreshHandle.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        DraggingThresh = true
-    end
-end)
-ThreshTrack.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        DraggingThresh = true
-        local f = math.clamp((i.Position.X - ThreshTrack.AbsolutePosition.X) / ThreshTrack.AbsoluteSize.X, 0, 1)
-        State.Threshold = math.floor(10 + f * 60)
-        ThreshFill.Size = UDim2.new(f, 0, 1, 0)
-        ThreshHandle.Position = UDim2.new(f, -5, 0.5, -5)
-        ThreshLabel.Text = "DIST: " .. State.Threshold
+-- Speed track click
+SpeedTrack.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        IsDraggingSpeed = true
+        local fraction = (input.Position.X - SpeedTrack.AbsolutePosition.X) / SpeedTrack.AbsoluteSize.X
+        UpdateSpeedSlider(fraction)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(i)
-    if DraggingSpeed and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-        local f = math.clamp((i.Position.X - SpeedTrack.AbsolutePosition.X) / SpeedTrack.AbsoluteSize.X, 0, 1)
-        State.Speed = math.floor(1 + f * 2499)
-        SpeedFill.Size = UDim2.new(f, 0, 1, 0)
-        SpeedHandle.Position = UDim2.new(f, -7, 0.5, -7)
-        Update()
-    end
-    if DraggingThresh and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-        local f = math.clamp((i.Position.X - ThreshTrack.AbsolutePosition.X) / ThreshTrack.AbsoluteSize.X, 0, 1)
-        State.Threshold = math.floor(10 + f * 60)
-        ThreshFill.Size = UDim2.new(f, 0, 1, 0)
-        ThreshHandle.Position = UDim2.new(f, -5, 0.5, -5)
-        ThreshLabel.Text = "DIST: " .. State.Threshold
+-- Threshold handle input
+ThresholdHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        IsDraggingThreshold = true
     end
 end)
 
-UserInputService.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        DraggingSpeed = false
-        DraggingThresh = false
+-- Threshold track click
+ThresholdTrack.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        IsDraggingThreshold = true
+        local fraction = (input.Position.X - ThresholdTrack.AbsolutePosition.X) / ThresholdTrack.AbsoluteSize.X
+        UpdateThresholdSlider(fraction)
     end
 end)
 
--- Keybind input
-UserInputService.InputBegan:Connect(function(i, gp)
-    if State.Binding then
-        if i.KeyCode ~= Enum.KeyCode.Unknown and i.KeyCode ~= Enum.KeyCode.RightShift then
-            State.Hotkey = i.KeyCode
-            State.Activation = "Hotkey"
-            State.Binding = false
-            BindBtn.Text = "[" .. i.KeyCode.Name .. "]"
-            BindBtn.TextColor3 = C.Green
-            DiagBind.Text = "● BIND: " .. i.KeyCode.Name
-            DiagBind.TextColor = C.TextDim
-            Update()
+-- Mouse/touch movement for sliders
+UserInputService.InputChanged:Connect(function(input)
+    if IsDraggingSpeed and (input.UserInputType == Enum.UserInputType.MouseMovement 
+    or input.UserInputType == Enum.UserInputType.Touch) then
+        local fraction = (input.Position.X - SpeedTrack.AbsolutePosition.X) / SpeedTrack.AbsoluteSize.X
+        UpdateSpeedSlider(fraction)
+    end
+    
+    if IsDraggingThreshold and (input.UserInputType == Enum.UserInputType.MouseMovement 
+    or input.UserInputType == Enum.UserInputType.Touch) then
+        local fraction = (input.Position.X - ThresholdTrack.AbsolutePosition.X) / ThresholdTrack.AbsoluteSize.X
+        UpdateThresholdSlider(fraction)
+    end
+end)
+
+-- Release sliders
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        IsDraggingSpeed = false
+        IsDraggingThreshold = false
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- Keyboard Input Handler
+--------------------------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    -- Handle keybind assignment
+    if Config.Activation == "Binding" then
+        if input.KeyCode ~= Enum.KeyCode.Unknown 
+        and input.KeyCode ~= Config.ToggleKey then
+            Config.Hotkey = input.KeyCode
+            Config.Activation = "Hotkey"
+            BindButton.Text = "[" .. input.KeyCode.Name .. "]"
+            BindButton.TextColor3 = Palette.Success
+            DiagBindLabel.Text = "BIND: " .. input.KeyCode.Name
+            DiagBindLabel.TextColor3 = Palette.TextSecondary
+            UpdateUI()
         end
         return
     end
-    if gp then return end
-    if i.KeyCode == Enum.KeyCode.RightShift then
-        State.Visible = not State.Visible
-        Container.Visible = State.Visible
+    
+    -- Ignore UI inputs
+    if gameProcessed then return end
+    
+    -- Toggle UI visibility
+    if input.KeyCode == Config.ToggleKey then
+        Config.Visible = not Config.Visible
+        Container.Visible = Config.Visible
     end
-    if State.Hotkey and i.KeyCode == State.Hotkey and State.Activation == "Hotkey" then
-        if State.Running then StopMacro() else StartMacro() end
-        Update()
+    
+    -- Hotkey activation
+    if Config.Hotkey and input.KeyCode == Config.Hotkey and Config.Activation == "Hotkey" then
+        ToggleMacro()
+        UpdateUI()
     end
 end)
 
-Update()
+--------------------------------------------------------------------------------
+-- Initialize
+--------------------------------------------------------------------------------
+UpdateUI()
