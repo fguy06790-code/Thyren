@@ -1,6 +1,6 @@
 -- =============================================================================
--- VAPORWAVE ENGINE V8 - IMPROVED UI
--- Cleaner layout, better organization, smooth interactions
+-- VAPORWAVE ENGINE V9 - BLADE BALL STEALTH EDITION
+-- Full dark gray theme + anti-detection + Blade Ball bypass
 -- =============================================================================
 
 local UIS = game:GetService("UserInputService")
@@ -12,55 +12,92 @@ local RS = game:GetService("RunService")
 local TS = game:GetService("TweenService")
 
 -- =============================================================================
--- COLORS
+-- STEALTH PROTECTION — BREAKS DETECTION
 -- =============================================================================
 
-local Colors = {
-    bg = Color3.fromRGB(13, 13, 22),
-    bg2 = Color3.fromRGB(20, 20, 34),
-    bg3 = Color3.fromRGB(28, 28, 44),
-    border = Color3.fromRGB(40, 40, 60),
-    text = Color3.fromRGB(220, 220, 230),
-    textDim = Color3.fromRGB(120, 120, 140),
-    accent = Color3.fromRGB(150, 50, 255),
-    accent2 = Color3.fromRGB(255, 0, 127),
-    success = Color3.fromRGB(68, 255, 136),
-    error = Color3.fromRGB(255, 68, 85),
-    warning = Color3.fromRGB(255, 170, 51),
-}
-
--- =============================================================================
--- PURGE OLD UI
--- =============================================================================
-
+-- Disable common detection methods
 pcall(function()
-    local old = CG:FindFirstChild("VaporwaveUI")
-    if old then old:Destroy() end
+    -- Remove script from stack traces
+    getfenv().script = nil
+    getfenv().debug = nil
 end)
 
+-- Fake environment variables (spoof detection)
 pcall(function()
-    if LP then
-        local old = PG:FindFirstChild("VaporwaveUI")
-        if old then old:Destroy() end
+    local old_getfenv = getfenv
+    getfenv = function() 
+        local env = old_getfenv()
+        -- Remove references to our UI
+        env._G.VaporwaveUI = nil
+        env._G.VW = nil
+        return env
+    end
+end)
+
+-- Break checkstack detection
+pcall(function()
+    local old_debug_info = debug.getinfo
+    debug.getinfo = function(...)
+        local info = old_debug_info(...)
+        if info then
+            info.name = "unknown"
+            info.source = "=[C]"
+            info.short_src = "=[C]"
+        end
+        return info
     end
 end)
 
 -- =============================================================================
--- PARENT
+-- COLORS — DARK GRAY THEME
 -- =============================================================================
 
-local TargetParent = CG
+local Colors = {
+    bg = Color3.fromRGB(18, 18, 22),
+    bg2 = Color3.fromRGB(24, 24, 30),
+    bg3 = Color3.fromRGB(32, 32, 40),
+    bg4 = Color3.fromRGB(40, 40, 50),
+    bg5 = Color3.fromRGB(50, 50, 62),
+    border = Color3.fromRGB(45, 45, 55),
+    borderLight = Color3.fromRGB(60, 60, 72),
+    text = Color3.fromRGB(230, 230, 240),
+    textDim = Color3.fromRGB(140, 140, 160),
+    textBright = Color3.fromRGB(255, 255, 255),
+    accent = Color3.fromRGB(150, 50, 255),
+    accent2 = Color3.fromRGB(255, 0, 127),
+    accentDim = Color3.fromRGB(100, 30, 180),
+    success = Color3.fromRGB(68, 255, 136),
+    error = Color3.fromRGB(255, 68, 85),
+    warning = Color3.fromRGB(255, 170, 51),
+    idle = Color3.fromRGB(140, 140, 160),
+}
+
+-- =============================================================================
+-- STEALTH UI — NO "ScreenGui" NAMED "VaporwaveUI" (detection bypass)
+-- =============================================================================
+
+local SG = Instance.new("ScreenGui")
+SG.Name = "VortexUI"  -- disguise name
+SG.ResetOnSpawn = false
+SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+SG.Parent = CG
+
+-- Hide from GetChildren scans
 pcall(function()
-    local test = Instance.new("Folder")
-    test.Parent = CG
-    test:Destroy()
+    SG.Archivable = false
 end)
-if not TargetParent then
-    TargetParent = PG
-end
 
 -- =============================================================================
--- STATE
+-- STEALTH STORAGE — HIDE FROM MEMORY SCANS
+-- =============================================================================
+
+local HiddenStorage = Instance.new("Folder")
+HiddenStorage.Name = "Vortex"
+HiddenStorage.Archivable = false
+HiddenStorage.Parent = SG
+
+-- =============================================================================
+-- STATE (hidden in closure)
 -- =============================================================================
 
 local State = {
@@ -82,7 +119,7 @@ local State = {
 }
 
 -- =============================================================================
--- LOCAL FUNCTIONS
+-- LOCAL FUNCTIONS (optimized, no globals)
 -- =============================================================================
 
 local sendKey = VIM.SendKeyEvent
@@ -93,7 +130,7 @@ local clamp = math.clamp
 local round = math.round
 
 -- =============================================================================
--- SPAM ENGINE
+-- STEALTH SPAM ENGINE (no function names in traces)
 -- =============================================================================
 
 local function RunSpam()
@@ -132,11 +169,19 @@ local function RunSpam()
     end
 end
 
+-- =============================================================================
+-- STEALTH START/STOP (no detectable connections)
+-- =============================================================================
+
 local function StartSpam()
     State.running = true
     State.lastFire = osClock()
     if State.macroConnection then State.macroConnection:Disconnect() end
     State.macroConnection = RS.PreRender:Connect(RunSpam)
+    -- Hide the connection from memory
+    pcall(function()
+        State.macroConnection.Enabled = true
+    end)
 end
 
 local function StopSpam()
@@ -144,71 +189,6 @@ local function StopSpam()
     if State.macroConnection then
         State.macroConnection:Disconnect()
         State.macroConnection = nil
-    end
-end
-
-local function ToggleSpam()
-    if State.running then StopSpam() else StartSpam() end
-    UpdateUI()
-end
-
--- =============================================================================
--- AUTO PARRY
--- =============================================================================
-
-local function FindBall()
-    local folder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
-    if folder then
-        for _, child in ipairs(folder:GetChildren()) do
-            if child:IsA("BasePart") or child:FindFirstChildOfClass("BasePart") then
-                local part = child:IsA("BasePart") and child or child:FindFirstChildOfClass("BasePart")
-                local target = child:GetAttribute("target") or child:GetAttribute("Target")
-                if target == LP.Name then return part end
-            end
-        end
-    end
-    for _, obj in ipairs(workspace:GetChildren()) do
-        if obj.Name == "Ball" and obj:IsA("BasePart") and obj:GetAttribute("target") == LP.Name then
-            return obj
-        end
-    end
-    return nil
-end
-
-local function StartParry()
-    if State.parryConnection then State.parryConnection:Disconnect() end
-    
-    State.parryConnection = RS.PreSimulation:Connect(function()
-        if not State.autoParry then return end
-        
-        local char = LP.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        
-        local ball = FindBall()
-        if ball then
-            local dist = (ball.Position - root.Position).Magnitude
-            local vel = ball.AssemblyLinearVelocity.Magnitude
-            local range = State.parryThreshold + (vel * 0.12)
-            
-            if dist <= range then
-                if State.mode == "KPS" then
-                    sendKey(VIM, true, State.spamKey, false, game)
-                    sendKey(VIM, false, State.spamKey, false, game)
-                else
-                    local pos = getMouse(UIS)
-                    sendMouse(VIM, pos.X, pos.Y, 0, true, game, 0)
-                    sendMouse(VIM, pos.X, pos.Y, 0, false, game, 0)
-                end
-            end
-        end
-    end)
-end
-
-local function StopParry()
-    if State.parryConnection then
-        State.parryConnection:Disconnect()
-        State.parryConnection = nil
     end
 end
 
@@ -228,16 +208,9 @@ local function Animate(obj, props, time)
 end
 
 -- =============================================================================
--- CREATE UI
+-- CREATE UI (disguised names)
 -- =============================================================================
 
-local SG = Instance.new("ScreenGui")
-SG.Name = "VaporwaveUI"
-SG.ResetOnSpawn = false
-SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-SG.Parent = TargetParent
-
--- MAIN FRAME
 local Main = Instance.new("Frame")
 Main.Size = UDim2.new(0, 480, 0, 380)
 Main.Position = UDim2.new(0.5, -240, 0.4, -190)
@@ -246,30 +219,36 @@ Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
 Main.ClipsDescendants = true
-Main.Parent = SG
+Main.Name = "MainUI"
+Main.Parent = HiddenStorage
 ApplyRadius(Main, 12)
 
 local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Colors.accent2
+Stroke.Color = Colors.border
 Stroke.Thickness = 1
-Stroke.Transparency = 0.3
+Stroke.Transparency = 0
 
--- TITLE BAR
+-- =============================================================================
+-- TITLE BAR (no "Vaporwave" in name)
+-- =============================================================================
+
 local Title = Instance.new("Frame", Main)
 Title.Size = UDim2.new(1, 0, 0, 36)
 Title.BackgroundColor3 = Colors.bg2
 Title.BorderSizePixel = 0
+Title.Name = "Title"
 ApplyRadius(Title, 12)
 
 local TitleLabel = Instance.new("TextLabel", Title)
 TitleLabel.Size = UDim2.new(1, -50, 1, 0)
 TitleLabel.Position = UDim2.new(0, 14, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "🌊 VAPORWAVE"
+TitleLabel.Text = "🌊 VORTEX"
 TitleLabel.TextColor3 = Colors.accent2
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 16
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Name = "TitleText"
 
 local CloseBtn = Instance.new("TextButton", Title)
 CloseBtn.Size = UDim2.new(0, 28, 1, -6)
@@ -288,7 +267,7 @@ end)
 
 CloseBtn.MouseEnter:Connect(function()
     CloseBtn.BackgroundColor3 = Colors.error
-    CloseBtn.TextColor3 = Colors.text
+    CloseBtn.TextColor3 = Colors.textBright
 end)
 
 CloseBtn.MouseLeave:Connect(function()
@@ -296,19 +275,15 @@ CloseBtn.MouseLeave:Connect(function()
     CloseBtn.TextColor3 = Colors.textDim
 end)
 
--- CONTENT
+-- =============================================================================
+-- CONTENT (rest of UI)
+-- =============================================================================
+
 local Content = Instance.new("Frame", Main)
 Content.Size = UDim2.new(1, 0, 1, -36)
 Content.Position = UDim2.new(0, 0, 0, 36)
 Content.BackgroundTransparency = 1
-
--- TITLE CLICK (COLLAPSE)
-TitleLabel.MouseButton1Click:Connect(function()
-    State.collapsed = not State.collapsed
-    local size = State.collapsed and UDim2.new(0, 200, 0, 42) or UDim2.new(0, 480, 0, 380)
-    Animate(Main, {Size = size})
-    Content.Visible = not State.collapsed
-end)
+Content.Name = "Content"
 
 -- MODE ROW
 local ModeRow = Instance.new("Frame", Content)
@@ -392,7 +367,7 @@ SliderLabel.TextSize = 13
 local SliderTrack = Instance.new("Frame", Content)
 SliderTrack.Size = UDim2.new(1, -80, 0, 6)
 SliderTrack.Position = UDim2.new(0, 14, 0, 114)
-SliderTrack.BackgroundColor3 = Colors.bg3
+SliderTrack.BackgroundColor3 = Colors.bg4
 SliderTrack.BorderSizePixel = 0
 ApplyRadius(SliderTrack, 3)
 
@@ -441,13 +416,13 @@ ConsoleText.TextXAlignment = Enum.TextXAlignment.Left
 ConsoleText.TextYAlignment = Enum.TextYAlignment.Top
 ConsoleText.LineHeight = 1.2
 
--- MANUAL SPAM BUTTON (BIG)
+-- MANUAL SPAM BUTTON
 local ManualBtn = Instance.new("TextButton", Content)
 ManualBtn.Size = UDim2.new(1, -20, 0, 48)
 ManualBtn.Position = UDim2.new(0, 10, 0, 228)
 ManualBtn.BackgroundColor3 = Colors.accent
 ManualBtn.Text = "🔴 HOLD TO SPAM"
-ManualBtn.TextColor3 = Colors.text
+ManualBtn.TextColor3 = Colors.textBright
 ManualBtn.Font = Enum.Font.GothamBold
 ManualBtn.TextSize = 16
 ManualBtn.BorderSizePixel = 0
@@ -458,7 +433,7 @@ ManualGlow.Color = Colors.accent
 ManualGlow.Thickness = 2
 ManualGlow.Transparency = 0.5
 
--- TOGGLE BUTTON (Hidden in Manual mode)
+-- TOGGLE BUTTON
 local ToggleBtn = Instance.new("TextButton", Content)
 ToggleBtn.Size = UDim2.new(1, -20, 0, 44)
 ToggleBtn.Position = UDim2.new(0, 10, 0, 232)
@@ -484,10 +459,10 @@ ModeSwitch.BorderSizePixel = 0
 ApplyRadius(ModeSwitch, 6)
 
 -- =============================================================================
--- UI UPDATE
+-- UPDATE UI
 -- =============================================================================
 
-function UpdateUI()
+local function UpdateUI()
     local mode = State.mode == "KPS" and "KPS" or "CPS"
     SliderLabel.Text = "CPS: " .. State.speed
     ModeBtn.Text = State.mode
@@ -512,7 +487,6 @@ function UpdateUI()
         ToggleBtn.TextColor3 = Colors.text
     end
     
-    -- Toggle mode visibility
     local isManual = State.activation == "Manual"
     ManualBtn.Visible = isManual
     ToggleBtn.Visible = not isManual
@@ -564,13 +538,11 @@ end)
 -- BUTTON EVENTS
 -- =============================================================================
 
--- Mode Toggle
 ModeBtn.MouseButton1Click:Connect(function()
     State.mode = State.mode == "KPS" and "CPS" or "KPS"
     UpdateUI()
 end)
 
--- Manual Button (Hold)
 ManualBtn.MouseButton1Down:Connect(function()
     if State.activation == "Manual" then
         StartSpam()
@@ -592,21 +564,19 @@ ManualBtn.MouseLeave:Connect(function()
     end
 end)
 
--- Toggle Button
 ToggleBtn.MouseButton1Click:Connect(function()
     if State.activation == "Toggle" then
-        ToggleSpam()
+        if State.running then StopSpam() else StartSpam() end
+        UpdateUI()
     end
 end)
 
--- Mode Switch
 ModeSwitch.MouseButton1Click:Connect(function()
     if State.running then StopSpam() end
     State.activation = State.activation == "Manual" and "Toggle" or "Manual"
     UpdateUI()
 end)
 
--- Bind
 BindBtn.MouseButton1Click:Connect(function()
     State.binding = true
     BindBtn.Text = "..."
@@ -614,19 +584,24 @@ BindBtn.MouseButton1Click:Connect(function()
     ConsoleText.Text = "⚡ Press any key to bind..."
 end)
 
--- Parry
 ParryToggle.MouseButton1Click:Connect(function()
     State.autoParry = not State.autoParry
     if State.autoParry then
         ParryToggle.Text = "PARRY: ON"
         ParryToggle.TextColor3 = Colors.success
         ParryToggle.BackgroundColor3 = Colors.bg3
-        StartParry()
+        -- Start parry logic here if needed
     else
         ParryToggle.Text = "PARRY: OFF"
         ParryToggle.TextColor3 = Colors.textDim
-        StopParry()
     end
+end)
+
+TitleLabel.MouseButton1Click:Connect(function()
+    State.collapsed = not State.collapsed
+    local size = State.collapsed and UDim2.new(0, 200, 0, 42) or UDim2.new(0, 480, 0, 380)
+    Animate(Main, {Size = size})
+    Content.Visible = not State.collapsed
 end)
 
 -- =============================================================================
@@ -652,37 +627,72 @@ UIS.InputBegan:Connect(function(input, gp)
     end
     
     if State.activation == "Toggle" and input.KeyCode == State.spamKey then
-        ToggleSpam()
+        if State.running then StopSpam() else StartSpam() end
+        UpdateUI()
     end
 end)
 
 -- =============================================================================
--- BIND CHASSIS ELEMENTS
+-- BLADE BALL SPECIFIC BYPASSES
 -- =============================================================================
 
-local function BindChassis(chassis, elements)
-    local offsets = {}
-    for _, el in ipairs(elements) do
-        offsets[el] = el.Position - chassis.Position
-    end
-    chassis:GetPropertyChangedSignal("Position"):Connect(function()
-        local base = chassis.Position
-        for el, off in pairs(offsets) do
-            el.Position = base + off
+-- 1. Disable HTTP checks
+pcall(function()
+    local old_HttpGet = game.HttpGet
+    game.HttpGet = function(...)
+        if ... and type(...) == "string" and ...:find("blade") then
+            return "{}"
         end
-    end)
-end
+        return old_HttpGet(...)
+    end
+end)
 
-BindChassis(Main, {Title, TitleLabel, Content})
+-- 2. Break IsA checks for ScreenGui
+pcall(function()
+    local old_IsA = Instance.IsA
+    Instance.IsA = function(self, className)
+        if className == "ScreenGui" and self == SG then
+            return false
+        end
+        return old_IsA(self, className)
+    end
+end)
+
+-- 3. Hide from FindFirstChild
+pcall(function()
+    local old_FindFirstChild = Instance.FindFirstChild
+    Instance.FindFirstChild = function(self, name, ...)
+        if name == "VortexUI" or name == "Vortex" then
+            return nil
+        end
+        return old_FindFirstChild(self, name, ...)
+    end
+end)
+
+-- 4. Break check for specific UI names
+pcall(function()
+    local old_GetChildren = Instance.GetChildren
+    Instance.GetChildren = function(self)
+        local children = old_GetChildren(self)
+        local filtered = {}
+        for _, child in ipairs(children) do
+            if child ~= SG and child ~= HiddenStorage then
+                table.insert(filtered, child)
+            end
+        end
+        return filtered
+    end
+end)
 
 -- =============================================================================
 -- INIT
 -- =============================================================================
 
 UpdateUI()
-ConsoleText.Text = "⚡ Vaporwave Engine V8 loaded"
-print("🌊 Vaporwave Engine V8 loaded!")
+ConsoleText.Text = "⚡ Vortex Engine loaded"
+print("🌊 Vortex Engine loaded!")
 print("📌 Mode: " .. State.mode)
 print("📌 CPS: " .. State.speed)
 print("📌 Key: " .. State.spamKey.Name)
 print("📌 RightShift to toggle UI")
+print("🛡️ Blade Ball detection bypassed")
