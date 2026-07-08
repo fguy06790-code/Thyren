@@ -1,8 +1,8 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
     ║                    THYREN - BLADE BALL                         ║
-    ║            Maximum Anti-Detection System v2.2                 ║
-    ║          [HORIZONTAL - TALL - SEPARATE ACTIVATE - 2500 MAX]   ║
+    ║            Maximum Anti-Detection System v2.3                 ║
+    ║     [HITS F KEY - SMALL DRAGGABLE ACTIVATE - 2500 MAX]        ║
     ╚══════════════════════════════════════════════════════════════════╝
 --]]
 
@@ -60,7 +60,7 @@ end
 SecureParent(ScreenGui)
 
 --------------------------------------------------------------------------------
--- STATE (Defined early to prevent dependency errors)
+-- STATE
 --------------------------------------------------------------------------------
 local State = {
     Running = false, Speed = 10, Mode = "KPS",
@@ -74,7 +74,7 @@ local CachedBall = nil
 local LastBallCheckTime = 0
 
 --------------------------------------------------------------------------------
--- ANTI-DETECTION SYSTEM (Timing functions defined first)
+-- ANTI-DETECTION SYSTEM
 --------------------------------------------------------------------------------
 local AntiDetect = {
     ParryHistory = {}, MaxHistorySize = 30, LastParryTime = 0,
@@ -201,19 +201,18 @@ end
 
 InitializeHID()
 
--- HumanParry defined here because it needs HID and AntiDetect
 local function HumanParry()
     if ShouldIntentionalMiss() then return end
     local delay = GetAdaptiveDelay()
     task.delay(delay, function()
         if not State.AutoParry then return end
-        HID.Press(Enum.KeyCode.Space)
+        HID.Press(Enum.KeyCode.Space) -- Auto Parry still uses Space
         RecordParryTiming()
     end)
 end
 
 --------------------------------------------------------------------------------
--- BALL DETECTION ENGINE (Defined before Visualizer & AutoParry)
+-- BALL DETECTION ENGINE
 --------------------------------------------------------------------------------
 local function FindBall()
     local now = os.clock()
@@ -325,7 +324,11 @@ end
 -- MACRO & AUTO PARRY LOGIC
 --------------------------------------------------------------------------------
 local function ExecuteMacroInput()
-    if State.Mode == "KPS" then HID.Press(Enum.KeyCode.Space) else MousePress() end
+    if State.Mode == "KPS" then
+        HID.Press(Enum.KeyCode.F) -- CHANGED TO F KEY
+    else
+        MousePress()
+    end
 end
 
 local function MacroTick()
@@ -453,7 +456,7 @@ local function CreateStatusDot(config)
 end
 
 --------------------------------------------------------------------------------
--- BUILD HORIZONTAL GUI (Taller: 680x265)
+-- BUILD HORIZONTAL GUI
 --------------------------------------------------------------------------------
 local Container = Instance.new("Frame")
 Container.Name = "Container"; Container.Size = UDim2.new(1, 0, 1, 0)
@@ -463,7 +466,7 @@ local PANEL_W, PANEL_H = 680, 265
 
 local MainPanel = CreateFrame({
     Name = "MainPanel", Size = UDim2.new(0, PANEL_W, 0, PANEL_H),
-    Position = UDim2.new(0.5, -PANEL_W/2, 0.5, -PANEL_H/2 - 24), -- Offset up slightly to make room for separate button
+    Position = UDim2.new(0.5, -PANEL_W/2, 0.5, -PANEL_H/2 - 30),
     Color = Theme.Background, Corner = 12, Stroke = true, StrokeColor = Theme.Border, Parent = Container
 })
 MainPanel.Active = true; MainPanel.Draggable = true
@@ -483,7 +486,7 @@ local ContentArea = CreateFrame({Name="Content", Size=UDim2.new(1,-20,1,-42), Po
 -- COLUMN 1: MACRO
 local C1W = 185
 local Col1 = CreateFrame({Size=UDim2.new(0,C1W,1,0), Transparency=1, Parent=ContentArea})
-CreateLabel({Size=UDim2.new(1,0,0,14), Position=UDim2.new(0,0,0,4), Text="MACRO", Color=Theme.TextDisabled, Size2=8, Font=Enum.Font.GothamBold, Parent=Col1})
+CreateLabel({Size=UDim2.new(1,0,0,14), Position=UDim2.new(0,0,0,4), Text="MACRO [F KEY]", Color=Theme.TextDisabled, Size2=8, Font=Enum.Font.GothamBold, Parent=Col1})
 
 local ModeButton = CreateButton({Name="ModeBtn", Size=UDim2.new(0.48,0,0,32), Position=UDim2.new(0,0,0,22), Text="KPS", TextSize=10, Corner=6, Parent=Col1})
 local BindButton = CreateButton({Name="BindBtn", Size=UDim2.new(0.48,0,0,32), Position=UDim2.new(0.52,0,0,22), Text="KEYBIND", TextColor=Theme.TextSecondary, TextSize=10, Corner=6, Parent=Col1})
@@ -536,21 +539,53 @@ for i, d in ipairs(diagData) do
 end
 
 --------------------------------------------------------------------------------
--- SEPARATE ACTIVATE BUTTON
+-- SEPARATE, SMALLER, DRAGGABLE ACTIVATE BUTTON
 --------------------------------------------------------------------------------
-local ActivateButton = CreateButton({
-    Name = "ActivateButton", Size = UDim2.new(0, PANEL_W, 0, 42),
-    Position = UDim2.new(0.5, -PANEL_W/2, 0.5, PANEL_H/2 - 24 + 8), -- Positioned directly below
-    Color = Theme.Surface, Text = "ACTIVATE", TextColor = Theme.TextPrimary,
-    TextSize = 14, Corner = 10, Stroke = true, StrokeColor = Theme.Border, Parent = Container
+local ActivateFrame = CreateFrame({
+    Name = "ActivateFrame", 
+    Size = UDim2.new(0, 160, 0, 34), -- Made smaller
+    Position = UDim2.new(0.5, -80, 0.5, PANEL_H/2 - 30 + 10), -- Positioned below panel
+    Color = Theme.Surface, Corner = 10, Stroke = true, StrokeColor = Theme.Border, Parent = Container
 })
-local ActDot = CreateStatusDot({Name="ActDot", Size=6, Position=UDim2.new(1,-18,0.5,-3), Color=Theme.TextDisabled, Parent=ActivateButton})
 
--- Sync Activate Button position when MainPanel is dragged
-MainPanel:GetPropertyChangedSignal("Position"):Connect(function()
-    local xPos = MainPanel.Position.X.Offset
-    local yPos = MainPanel.Position.Y.Offset + PANEL_H + 8
-    ActivateButton.Position = UDim2.new(0, xPos, 0, yPos)
+local ActivateButton = CreateButton({
+    Name = "ActivateButton", Size = UDim2.new(1, 0, 1, 0),
+    Position = UDim2.new(0, 0, 0, 0),
+    Color = Theme.Surface, Text = "ACTIVATE", TextColor = Theme.TextPrimary,
+    TextSize = 12, Corner = 10, Parent = ActivateFrame
+})
+local ActDot = CreateStatusDot({Name="ActDot", Size=5, Position=UDim2.new(1,-15,0.5,-2.5), Color=Theme.TextDisabled, Parent=ActivateButton})
+
+-- Custom Drag Logic for the Activate Button (So it can be dragged without accidentally clicking)
+local actDragging, actMoved, actStart, actInitialPos = false, false, nil, nil
+
+ActivateButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        actDragging = true
+        actMoved = false
+        actStart = input.Position
+        actInitialPos = ActivateFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if actDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - actStart
+        -- If moved more than 5 pixels, it's a drag, not a click
+        if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+            actMoved = true
+            ActivateFrame.Position = UDim2.new(
+                actInitialPos.X.Scale, actInitialPos.X.Offset + delta.X,
+                actInitialPos.Y.Scale, actInitialPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+ActivateButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        actDragging = false
+    end
 end)
 
 --------------------------------------------------------------------------------
@@ -594,7 +629,7 @@ local function UpdateUI()
 
     -- Diagnostics
     DiagDots.Macro.BackgroundColor3 = State.Running and Theme.Success or Theme.TextDisabled
-    DiagTexts.Macro.Text = State.Running and ("MACRO: "..State.Mode.." @"..State.Speed) or "MACRO: IDLE"
+    DiagTexts.Macro.Text = State.Running and ("MACRO: F @"..State.Speed) or "MACRO: IDLE"
     DiagTexts.Macro.TextColor3 = State.Running and Theme.TextSecondary or Theme.TextMuted
 
     DiagDots.Parry.BackgroundColor3 = State.AutoParry and Theme.Success or Theme.TextDisabled
@@ -630,7 +665,7 @@ local function UpdateUI()
 end
 
 --------------------------------------------------------------------------------
--- SLIDER INTERACTIVITY (MAX 2500 FOR SPEED)
+-- SLIDER INTERACTIVITY
 --------------------------------------------------------------------------------
 local function MakeSliderWork(track, fill, handle, minVal, maxVal, callback)
     local dragging = false
@@ -661,8 +696,14 @@ BindButton.MouseButton1Click:Connect(function()
     State.Binding = true; UpdateUI()
 end)
 
+-- Custom Click for Activate (Ignores if it was just being dragged)
 ActivateButton.MouseButton1Click:Connect(function()
-    ToggleMacro(); UpdateUI()
+    if actMoved then
+        actMoved = false -- Reset flag so next click works normally
+        return
+    end
+    ToggleMacro()
+    UpdateUI()
 end)
 
 ParryButton.MouseButton1Click:Connect(function()
@@ -692,7 +733,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     if input.KeyCode == Enum.KeyCode.RightShift then
         State.Visible = not State.Visible
         MainPanel.Visible = State.Visible
-        ActivateButton.Visible = State.Visible
+        ActivateFrame.Visible = State.Visible
     end
 end)
 
