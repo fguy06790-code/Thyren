@@ -1,4 +1,4 @@
-can you make this work -- =============================================================================
+=============================================================================
 -- VAPORWAVE DECOUPLED REPOSITORY DASHBOARD (COLLAPSIBLE LOGO MODULE)
 -- TARGET: Roblox Executor Environment (Zero-Allocation Micro-Loops)
 -- THEME: Vaporwave (Deep Neon Purple & Electric Pink)
