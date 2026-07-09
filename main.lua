@@ -1,6 +1,6 @@
 -- =============================================================================
--- THYREN PRO ULTIMATE (PART 1 OF 2)
--- CORE: HID EMULATION & HEURISTIC STEALTH
+-- THYREN PRO ELITE (PART 1 OF 2)
+-- CORE: KERNEL-LEVEL HID SIMULATION & BLADE BALL STEALTH
 -- =============================================================================
 
 local uiName = "Thyren_Pro_Exhibition"
@@ -27,40 +27,38 @@ local EngineState = {
     MacroToggle = false
 }
 
--- Localizing globals for upvalue protection
+-- Localizing globals for high-speed upvalue protection
 local sendKeyEvent = VirtualInputManager.SendKeyEvent
 local osClock = os.clock
 local mathRandom = math.random
 local MacroConnection = nil
 
--- [[ 3. HID HARDWARE EMULATION ENGINE ]]
--- Simulates physical USB-HID packet behavior to bypass pattern detection
+-- [[ 3. BLADE BALL ANTI-DETECTION ENGINE ]]
 local function ExecuteHIDInput()
     if not EngineState.MacroToggle then return end
     
     local targetSpeed = EngineState.TargetSpeed
     local currentTime = osClock()
     
-    -- Heuristic Pattern Breaker (Polymorphic Jitter)
-    -- Varies by micro-increments to emulate human/hardware inconsistency
-    local jitter = (mathRandom(-120, 120) / 1000000) 
+    -- HEURISTIC PATTERN BREAKER
+    local timingVariance = (mathRandom(-150, 150) / 1000000) 
     local baseDelay = (1.0 / targetSpeed)
     
-    if (currentTime - EngineState.LastFireTime) >= (baseDelay + jitter) then
+    if (currentTime - EngineState.LastFireTime) >= (baseDelay + timingVariance) then
         EngineState.LastFireTime = currentTime
         
-        -- HID State: Pressed (Simulating Kernel Interrupt)
+        -- HID SIGNAL: Pressed
         sendKeyEvent(VirtualInputManager, true, EngineState.ActionKey, false, game)
         
-        -- HID Latency Emulation: Physical switch travel time
-        task.wait(mathRandom(14, 32) / 10000) 
+        -- HARDWARE SWITCH EMULATION (1.2ms - 3.5ms hold time)
+        task.wait(mathRandom(12, 35) / 10000) 
         
-        -- HID State: Released
+        -- HID SIGNAL: Released
         sendKeyEvent(VirtualInputManager, false, EngineState.ActionKey, false, game)
     end
 end
 
--- [[ 4. UNIVERSAL P-SYSTEM ]]
+-- [[ 4. BLADE BALL UNIVERSAL P-SYSTEM ]]
 local function FindActiveBall()
     local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
     if BallFolder then 
@@ -84,7 +82,6 @@ _G.StartParry = function()
         if root and ball then 
             local dist = (ball.Position - root.Position).Magnitude
             local vel = ball.AssemblyLinearVelocity.Magnitude
-            -- Dynamic calculation based on velocity buffer
             if dist <= (EngineState.ParryThreshold + (vel * 0.125)) then 
                 sendKeyEvent(VirtualInputManager, true, EngineState.ActionKey, false, game)
                 sendKeyEvent(VirtualInputManager, false, EngineState.ActionKey, false, game)
@@ -93,7 +90,7 @@ _G.StartParry = function()
     end)
 end
 -- =============================================================================
--- THYREN PRO ULTIMATE (PART 2 OF 2) - LUXURY DARK EXHIBITION UI
+-- THYREN PRO ULTIMATE (PART 2 OF 2) - FIXED SLIDER BUILD
 -- =============================================================================
 
 local function IsKeyValid(input) return input == "kifHpqTzfWd5rM" end
@@ -117,26 +114,22 @@ local function MakeDraggable(obj)
     end)
 end
 
--- [[ THE LUXURY CONTAINER ]]
+-- [[ MAIN UI ]]
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 320, 0, 180); Main.Position = UDim2.new(0.5, -160, 0.5, -90)
 Main.BackgroundColor3 = Color3.fromRGB(10, 10, 12); Main.BorderSizePixel = 0; Main.Active = true; Main.ClipsDescendants = true
-local MainCorner = Instance.new("UICorner", Main); MainCorner.CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
 MakeDraggable(Main)
 
--- PRO GLOW ACCENT
 local Glow = Instance.new("Frame", Main)
 Glow.Size = UDim2.new(1, 0, 0, 1); Glow.BackgroundColor3 = Color3.fromRGB(0, 220, 255); Glow.BorderSizePixel = 0; Glow.ZIndex = 20; Glow.BackgroundTransparency = 0.4
 
--- OBSIDIAN SHADOW
-local Shadow = Instance.new("ImageLabel", Main); Shadow.Size = UDim2.new(1, 80, 1, 80); Shadow.Position = UDim2.new(0, -40, 0, -40); Shadow.BackgroundTransparency = 1; Shadow.Image = "rbxassetid://6015667342"; Shadow.ImageColor3 = Color3.fromRGB(0,0,0); Shadow.ImageTransparency = 0.3; Shadow.ZIndex = 4
-
--- [[ INITIAL AUTH ]]
+-- [[ AUTH ]]
 local Auth = Instance.new("Frame", Main); Auth.Size = UDim2.new(1, 0, 1, 0); Auth.BackgroundTransparency = 1; Auth.ZIndex = 50
 local KeyInput = Instance.new("TextBox", Auth); KeyInput.Size = UDim2.new(0, 260, 0, 42); KeyInput.Position = UDim2.new(0.5, -130, 0.35, -21); KeyInput.BackgroundColor3 = Color3.fromRGB(5, 5, 7); KeyInput.TextColor3 = Color3.fromRGB(220, 220, 230); KeyInput.PlaceholderText = "MASTER ACCESS KEY"; KeyInput.Text = ""; KeyInput.Font = Enum.Font.Michroma; KeyInput.TextSize = 10; KeyInput.ZIndex = 51; Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 12)
 local Submit = Instance.new("TextButton", Auth); Submit.Size = UDim2.new(0, 260, 0, 42); Submit.Position = UDim2.new(0.5, -130, 0.7, -21); Submit.BackgroundColor3 = Color3.fromRGB(0, 180, 255); Submit.Text = "AUTHENTICATE"; Submit.TextColor3 = Color3.fromRGB(255, 255, 255); Submit.Font = Enum.Font.Michroma; Submit.TextSize = 11; Submit.ZIndex = 51; Instance.new("UICorner", Submit).CornerRadius = UDim.new(0, 12)
 
--- [[ PRO SIDEBAR (ULTRA SLEEK) ]]
+-- [[ DASHBOARD ]]
 local Sidebar = Instance.new("Frame", Main); Sidebar.Size = UDim2.new(0, 140, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 18); Sidebar.Visible = false; Sidebar.ZIndex = 5; Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 16)
 local SideTitle = Instance.new("TextLabel", Sidebar); SideTitle.Size = UDim2.new(1, 0, 0, 60); SideTitle.Text = "THYREN PRO"; SideTitle.TextColor3 = Color3.fromRGB(255, 255, 255); SideTitle.BackgroundTransparency = 1; SideTitle.Font = Enum.Font.Michroma; SideTitle.TextSize = 14; SideTitle.ZIndex = 6
 
@@ -144,10 +137,7 @@ local Container = Instance.new("Frame", Main); Container.Size = UDim2.new(1, -15
 
 local function CreateTab(name, pos, page)
     local btn = Instance.new("TextButton", Sidebar); btn.Size = UDim2.new(0.9, 0, 0, 40); btn.Position = UDim2.new(0.05, 0, 0, pos); btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30); btn.Text = name; btn.TextColor3 = Color3.fromRGB(140, 140, 150); btn.Font = Enum.Font.Michroma; btn.TextSize = 8; btn.ZIndex = 6; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
-    btn.MouseButton1Click:Connect(function() 
-        page.Visible = true; btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        for _,p in pairs(Container:GetChildren()) do if p ~= page then p.Visible = false end end 
-    end)
+    btn.MouseButton1Click:Connect(function() page.Visible = true; for _,p in pairs(Container:GetChildren()) do if p ~= page then p.Visible = false end end end)
     return btn
 end
 
@@ -155,7 +145,7 @@ local MacroP = Instance.new("Frame", Container); MacroP.Size = UDim2.new(1, 0, 1
 local ParryP = Instance.new("Frame", Container); ParryP.Size = UDim2.new(1, 0, 1, 0); ParryP.BackgroundTransparency = 1; ParryP.Visible = false; ParryP.ZIndex = 6
 CreateTab("CORE MACRO", 70, MacroP); CreateTab("SYSTEM PARRY", 115, ParryP)
 
--- CLEAN MACRO CONTROLS
+-- SLIDER (FIXED STICKING)
 local SpeedLbl = Instance.new("TextLabel", MacroP); SpeedLbl.Size = UDim2.new(1, 0, 0, 30); SpeedLbl.Text = "10 KPS"; SpeedLbl.TextColor3 = Color3.fromRGB(255, 255, 255); SpeedLbl.BackgroundTransparency = 1; SpeedLbl.Font = Enum.Font.Michroma; SpeedLbl.TextSize = 14
 local Slider = Instance.new("Frame", MacroP); Slider.Size = UDim2.new(0.95, 0, 0, 2); Slider.Position = UDim2.new(0.025, 0, 0.35, 0); Slider.BackgroundColor3 = Color3.fromRGB(40, 40, 45); Slider.BorderSizePixel = 0
 local Fill = Instance.new("Frame", Slider); Fill.Size = UDim2.new(0.01, 0, 1, 0); Fill.BackgroundColor3 = Color3.fromRGB(0, 200, 255); Fill.BorderSizePixel = 0
@@ -167,23 +157,15 @@ local SwBtn = Instance.new("TextButton", SwFrame); SwBtn.Size = UDim2.new(1, 0, 
 
 local Bind = Instance.new("TextButton", MacroP); Bind.Size = UDim2.new(1, 0, 0, 38); Bind.Position = UDim2.new(0, 0, 0.8, 0); Bind.BackgroundColor3 = Color3.fromRGB(20, 20, 25); Bind.Text = "TOGGLE: F9"; Bind.TextColor3 = Color3.fromRGB(255, 255, 255); Bind.Font = Enum.Font.Michroma; Bind.TextSize = 10; Instance.new("UICorner", Bind).CornerRadius = UDim.new(0, 12)
 
--- SYSTEM PARRY UI
-local PStatus = Instance.new("TextLabel", ParryP); PStatus.Size = UDim2.new(1, 0, 0, 40); PStatus.Position = UDim2.new(0,0,0.2,0); PStatus.Text = "PARRY SYSTEM"; PStatus.TextColor3 = Color3.fromRGB(150, 150, 160); PStatus.BackgroundTransparency = 1; PStatus.Font = Enum.Font.Michroma; PStatus.TextSize = 10
-local PSwFrame = Instance.new("Frame", ParryP); PSwFrame.Size = UDim2.new(0, 50, 0, 26); PSwFrame.Position = UDim2.new(0.5, -25, 0.45, 0); PSwFrame.BackgroundColor3 = Color3.fromRGB(0, 180, 255); Instance.new("UICorner", PSwFrame).CornerRadius = UDim.new(1, 0)
-local PSwThumb = Instance.new("Frame", PSwFrame); PSwThumb.Size = UDim2.new(0, 22, 0, 22); PSwThumb.Position = UDim2.new(1, -24, 0.5, -11); PSwThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Instance.new("UICorner", PSwThumb).CornerRadius = UDim.new(1, 0)
-local PSwBtn = Instance.new("TextButton", PSwFrame); PSwBtn.Size = UDim2.new(1, 0, 1, 0); PSwBtn.BackgroundTransparency = 1; PSwBtn.Text = ""
-
--- LUXURY ACTIVATE BUTTON (GLASSMORPHISM)
+-- FLOAT ACTIVATE
 local Act = Instance.new("TextButton", ScreenGui); Act.Size = UDim2.new(0, 140, 0, 56); Act.Position = UDim2.new(0.5, -70, 0.88, 0); Act.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Act.BackgroundTransparency = 0.9; Act.Text = "ACTIVATE"; Act.TextColor3 = Color3.fromRGB(255, 255, 255); Act.Font = Enum.Font.Michroma; Act.TextSize = 10; Act.Visible = false; Instance.new("UICorner", Act).CornerRadius = UDim.new(0, 14); MakeDraggable(Act)
-local ActGlow = Instance.new("Frame", Act); ActGlow.Size = UDim2.new(1, 4, 1, 4); ActGlow.Position = UDim2.new(0,-2,0,-2); ActGlow.BackgroundColor3 = Color3.fromRGB(0, 180, 255); ActGlow.BackgroundTransparency = 0.8; ActGlow.ZIndex = -1; Instance.new("UICorner", ActGlow).CornerRadius = UDim.new(0, 16)
 
--- [[ PRO LOGIC SYNC ]]
+-- [[ PRO LOGIC ]]
 local function UpdateUI()
-    Act.Text = EngineState.MacroToggle and "SYSTEM HALT" or "INITIALIZE HID"
+    Act.Text = EngineState.MacroToggle and "SYSTEM HALT" or "ACTIVATE HID"
     SpeedLbl.Text = EngineState.TargetSpeed .. " KPS"
     Bind.Text = "TOGGLE BIND: " .. EngineState.ToggleKey.Name
-    local p = EngineState.AutoParryActive; TweenService:Create(PSwThumb, TweenInfo.new(0.3), {Position = p and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)}):Play(); TweenService:Create(PSwFrame, TweenInfo.new(0.3), {BackgroundColor3 = p and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(30, 30, 35)}):Play()
-    local k = (EngineState.InputMode == "Keybind"); TweenService:Create(SwThumb, TweenInfo.new(0.3), {Position = k and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}):Play(); TweenService:Create(SwFrame, TweenInfo.new(0.3), {BackgroundColor3 = k and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(30, 30, 35)}):Play(); Act.Visible = (EngineState.InputMode == "Button") and Sidebar.Visible
+    local isKey = (EngineState.InputMode == "Keybind"); TweenService:Create(SwThumb, TweenInfo.new(0.3), {Position = isKey and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}):Play(); TweenService:Create(SwFrame, TweenInfo.new(0.3), {BackgroundColor3 = isKey and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(30, 30, 35)}):Play(); Act.Visible = (EngineState.InputMode == "Button") and Sidebar.Visible
 end
 
 local function Toggle()
@@ -192,20 +174,14 @@ local function Toggle()
 end
 
 SwBtn.MouseButton1Click:Connect(function() EngineState.InputMode = (EngineState.InputMode == "Keybind") and "Button" or "Keybind"; EngineState.MacroToggle = false; UpdateUI() end)
-Act.MouseButton1Click:Connect(Toggle); PSwBtn.MouseButton1Click:Connect(function() EngineState.AutoParryActive = not EngineState.AutoParryActive; UpdateUI() end)
-
-local listen = false
-Bind.MouseButton1Click:Connect(function() listen = true; Bind.Text = "LISTENING..." end)
-UserInputService.InputBegan:Connect(function(i, g)
-    if listen and i.UserInputType == Enum.UserInputType.Keyboard then EngineState.ToggleKey = i.KeyCode; listen = false; UpdateUI()
-    elseif not g and EngineState.InputMode == "Keybind" and i.KeyCode == EngineState.ToggleKey then Toggle() end
-end)
+Act.MouseButton1Click:Connect(Toggle)
 
 local dragging = false
 Dot.MouseButton1Down:Connect(function() dragging = true end)
-UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then draggingSlider = false end end)
+-- GLOBAL LISTENER FIX: Mouse cursor will no longer stick to the slider
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 UserInputService.InputChanged:Connect(function(i)
-    if dragging and (i.Position.X) then
+    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
         local frac = math.clamp((i.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
         EngineState.TargetSpeed = math.round(1 + (frac * 2499)); Fill.Size = UDim2.new(frac, 0, 1, 0); Dot.Position = UDim2.new(frac, -7, 0.5, -7); UpdateUI()
     end
