@@ -1,9 +1,9 @@
 -- =============================================================================
 -- THYREN ULTIMATE (PART 1 OF 2)
--- CORE: HIGH-PERFORMANCE ENGINE & AUTO-PARRY
+-- CORE: ULTRA-EFFICIENT STEALTH ENGINE
 -- =============================================================================
 
-local uiName = "ThyrenUltra_Final_V5"
+local uiName = "Thyren_Pro_Final"
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -12,17 +12,16 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- [[ 1. PURGE PREVIOUS ]]
+-- [[ 1. INSTANCE PURGE ]]
 pcall(function() if CoreGui:FindFirstChild(uiName) then CoreGui[uiName]:Destroy() end end)
 
--- [[ 2. CORE ENGINE STATE ]]
+-- [[ 2. GLOBAL STATE ]]
 local EngineState = { 
-    IsRunning = false, 
     TargetSpeed = 10, 
-    InputMode = "Button", 
+    InputMode = "Button", -- "Button" or "Keybind"
     AutoParryActive = true, 
     ParryThreshold = 45, 
-    SpamKey = Enum.KeyCode.F,
+    ActionKey = Enum.KeyCode.F,
     ToggleKey = Enum.KeyCode.F9, 
     LastFireTime = 0, 
     MacroToggle = false
@@ -33,25 +32,29 @@ local osClock = os.clock
 local mathRandom = math.random
 local MacroConnection = nil
 
--- [[ 3. STEALTH MACRO ENGINE ]]
+-- [[ 3. HEURISTIC ANTI-DETECTION ENGINE ]]
 local function ExecuteRawInput()
     if not EngineState.MacroToggle then return end
     
     local targetSpeed = EngineState.TargetSpeed
     local currentTime = osClock()
-    local jitter = (mathRandom(-50, 50) / 10000) 
     
-    if (currentTime - EngineState.LastFireTime) >= ((1.0 / targetSpeed) + jitter) then
+    -- Polymorphic Micro-Jitter (Breaks pattern recognition)
+    local jitter = (mathRandom(-90, 90) / 1000000) 
+    local baseDelay = (1.0 / targetSpeed)
+    
+    if (currentTime - EngineState.LastFireTime) >= (baseDelay + jitter) then
         EngineState.LastFireTime = currentTime
         
-        -- Physical Emulation
-        sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game)
-        task.wait(0.001)
-        sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game)
+        -- Raw Action Signal (F)
+        sendKeyEvent(VirtualInputManager, true, EngineState.ActionKey, false, game)
+        -- Dynamic Hardware Hold-Time Simulation
+        task.wait(mathRandom(12, 28) / 10000) 
+        sendKeyEvent(VirtualInputManager, false, EngineState.ActionKey, false, game)
     end
 end
 
--- [[ 4. UNIVERSAL PARRY SCANNER ]]
+-- [[ 4. PARRY LOGIC ]]
 local function FindActiveBall()
     local BallFolder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
     if BallFolder then 
@@ -74,19 +77,16 @@ _G.StartParry = function()
             local dist = (ball.Position - root.Position).Magnitude
             local vel = ball.AssemblyLinearVelocity.Magnitude
             if dist <= (EngineState.ParryThreshold + (vel * 0.12)) then 
-                sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game)
-                sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game)
+                sendKeyEvent(VirtualInputManager, true, EngineState.ActionKey, false, game)
+                sendKeyEvent(VirtualInputManager, false, EngineState.ActionKey, false, game)
             end
         end
     end)
 end
--- =============================================================================
--- THYREN ULTIMATE (PART 2 OF 2) - PRODUCTION ADVERTISING EDITION
+-- THYREN ULTIMATE (PART 2 OF 2) - THE "PRO" CLEAN DASHBOARD
 -- =============================================================================
 
-local function IsKeyValid(input)
-    return input == "kifHpqTzfWd5rM"
-end
+local function IsKeyValid(input) return input == "kifHpqTzfWd5rM" end
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = uiName
 ScreenGui.ResetOnSpawn = false; ScreenGui.DisplayOrder = 999; ScreenGui.IgnoreGuiInset = true
@@ -107,114 +107,99 @@ local function MakeDraggable(obj)
     end)
 end
 
--- [[ MAIN PRODUCTION CONTAINER ]]
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
-MainFrame.Size = UDim2.new(0, 300, 0, 160)
-MainFrame.ClipsDescendants = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
-MakeDraggable(MainFrame)
+-- [[ MAIN UI ]]
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 300, 0, 160); Main.Position = UDim2.new(0.5, -150, 0.5, -80)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18); Main.BorderSizePixel = 0; Main.Active = true; Main.ClipsDescendants = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+MakeDraggable(Main)
 
--- NEON ACCENT BORDER
-local Accent = Instance.new("Frame", MainFrame)
-Accent.Size = UDim2.new(1, 0, 0, 2); Accent.BackgroundColor3 = Color3.fromRGB(130, 130, 145); Accent.BorderSizePixel = 0; Accent.ZIndex = 10
-
--- DEPTH SHADOW
-local Shadow = Instance.new("ImageLabel", MainFrame); Shadow.Size = UDim2.new(1, 40, 1, 40); Shadow.Position = UDim2.new(0, -20, 0, -20); Shadow.BackgroundTransparency = 1; Shadow.Image = "rbxassetid://6015667342"; Shadow.ImageColor3 = Color3.fromRGB(0,0,0); Shadow.ImageTransparency = 0.4; Shadow.ZIndex = 4
+-- CLEAN ACCENT
+local Accent = Instance.new("Frame", Main)
+Accent.Size = UDim2.new(1, 0, 0, 2); Accent.BackgroundColor3 = Color3.fromRGB(0, 160, 255); Accent.BorderSizePixel = 0; Accent.ZIndex = 10
 
 -- [[ AUTH OVERLAY ]]
-local AuthFrame = Instance.new("Frame", MainFrame); AuthFrame.Size = UDim2.new(1, 0, 1, 0); AuthFrame.BackgroundTransparency = 1; AuthFrame.ZIndex = 50
-local KeyInput = Instance.new("TextBox", AuthFrame); KeyInput.Size = UDim2.new(0, 240, 0, 35); KeyInput.Position = UDim2.new(0.5, -120, 0.35, -17); KeyInput.BackgroundColor3 = Color3.fromRGB(20, 20, 22); KeyInput.TextColor3 = Color3.fromRGB(200, 200, 210); KeyInput.PlaceholderText = "Master Key..."; KeyInput.Text = ""; KeyInput.Font = Enum.Font.Code; KeyInput.ZIndex = 51
-Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 8)
-local SubmitBtn = Instance.new("TextButton", AuthFrame); SubmitBtn.Size = UDim2.new(0, 240, 0, 35); SubmitBtn.Position = UDim2.new(0.5, -120, 0.75, -17); SubmitBtn.BackgroundColor3 = Color3.fromRGB(130, 130, 145); SubmitBtn.Text = "INITIALIZE"; SubmitBtn.TextColor3 = Color3.fromRGB(20, 20, 25); SubmitBtn.Font = Enum.Font.Michroma; SubmitBtn.ZIndex = 51
-Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
+local Auth = Instance.new("Frame", Main); Auth.Size = UDim2.new(1, 0, 1, 0); Auth.BackgroundTransparency = 1; Auth.ZIndex = 50
+local KeyInput = Instance.new("TextBox", Auth); KeyInput.Size = UDim2.new(0, 240, 0, 35); KeyInput.Position = UDim2.new(0.5, -120, 0.35, -17); KeyInput.BackgroundColor3 = Color3.fromRGB(10, 10, 12); KeyInput.TextColor3 = Color3.fromRGB(200, 200, 210); KeyInput.PlaceholderText = "License Key..."; KeyInput.Text = ""; KeyInput.Font = Enum.Font.Michroma; KeyInput.TextSize = 10; KeyInput.ZIndex = 51; Instance.new("UICorner", KeyInput)
+local Submit = Instance.new("TextButton", Auth); Submit.Size = UDim2.new(0, 240, 0, 35); Submit.Position = UDim2.new(0.5, -120, 0.7, -17); Submit.BackgroundColor3 = Color3.fromRGB(0, 160, 255); Submit.Text = "INITIALIZE"; Submit.TextColor3 = Color3.fromRGB(255, 255, 255); Submit.Font = Enum.Font.Michroma; Submit.TextSize = 10; Submit.ZIndex = 51; Instance.new("UICorner", Submit)
 
--- [[ SIDEBAR ]]
-local Sidebar = Instance.new("Frame", MainFrame); Sidebar.Size = UDim2.new(0, 140, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(18, 18, 22); Sidebar.ZIndex = 6; Sidebar.Visible = false
-Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 16)
-local SideTitle = Instance.new("TextLabel", Sidebar); SideTitle.Size = UDim2.new(1, 0, 0, 60); SideTitle.Text = "THYREN"; SideTitle.TextColor3 = Color3.fromRGB(255, 255, 255); SideTitle.BackgroundTransparency = 1; SideTitle.Font = Enum.Font.Michroma; SideTitle.TextSize = 16; SideTitle.ZIndex = 7
+-- [[ DASHBOARD (HIDDEN) ]]
+local Sidebar = Instance.new("Frame", Main); Sidebar.Size = UDim2.new(0, 130, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(12, 12, 15); Sidebar.Visible = false; Sidebar.ZIndex = 5; Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 14)
+local SideTitle = Instance.new("TextLabel", Sidebar); SideTitle.Size = UDim2.new(1, 0, 0, 50); SideTitle.Text = "THYREN"; SideTitle.TextColor3 = Color3.fromRGB(0, 160, 255); SideTitle.BackgroundTransparency = 1; SideTitle.Font = Enum.Font.Michroma; SideTitle.TextSize = 14; SideTitle.ZIndex = 6
 
-local TabContainer = Instance.new("Frame", Sidebar); TabContainer.Size = UDim2.new(1, 0, 1, -60); TabContainer.Position = UDim2.new(0, 0, 0, 60); TabContainer.BackgroundTransparency = 1; TabContainer.ZIndex = 7
-local function CreateTab(name, pos)
-    local btn = Instance.new("TextButton", TabContainer); btn.Size = UDim2.new(0.9, 0, 0, 40); btn.Position = UDim2.new(0.05, 0, 0, pos); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = name; btn.TextColor3 = Color3.fromRGB(200, 200, 210); btn.Font = Enum.Font.Michroma; btn.TextSize = 8; btn.ZIndex = 8
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8); return btn
+local Container = Instance.new("Frame", Main); Container.Size = UDim2.new(1, -140, 1, -20); Container.Position = UDim2.new(0, 140, 0, 10); Container.BackgroundTransparency = 1; Container.Visible = false; Container.ZIndex = 5
+
+local function CreateTab(name, pos, page)
+    local btn = Instance.new("TextButton", Sidebar); btn.Size = UDim2.new(0.9, 0, 0, 35); btn.Position = UDim2.new(0.05, 0, 0, pos); btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25); btn.Text = name; btn.TextColor3 = Color3.fromRGB(150, 150, 160); btn.Font = Enum.Font.Michroma; btn.TextSize = 8; btn.ZIndex = 6; Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function() page.Visible = true; for _,p in pairs(Container:GetChildren()) do if p ~= page then p.Visible = false end end end)
+    return btn
 end
-local MacroTabBtn = CreateTab("MACRO ENGINE", 10); local ParryTabBtn = CreateTab("AUTO PARRY", 55)
 
-local PageContainer = Instance.new("Frame", MainFrame); PageContainer.Size = UDim2.new(1, -150, 1, -20); PageContainer.Position = UDim2.new(0, 150, 0, 10); PageContainer.BackgroundTransparency = 1; PageContainer.ZIndex = 6; PageContainer.Visible = false
-local function CreatePage()
-    local p = Instance.new("Frame", PageContainer); p.Size = UDim2.new(1, 0, 1, 0); p.BackgroundTransparency = 1; p.Visible = false; p.ZIndex = 6; return p
-end
-local MacroPage = CreatePage(); local ParryPage = CreatePage()
+local MacroP = Instance.new("Frame", Container); MacroP.Size = UDim2.new(1, 0, 1, 0); MacroP.BackgroundTransparency = 1; MacroP.ZIndex = 6
+local ParryP = Instance.new("Frame", Container); ParryP.Size = UDim2.new(1, 0, 1, 0); ParryP.BackgroundTransparency = 1; ParryP.Visible = false; ParryP.ZIndex = 6
+CreateTab("MACRO", 60, MacroP); CreateTab("PARRY", 100, ParryP)
 
--- [[ MACRO PAGE ]]
-local SpeedDisplay = Instance.new("TextLabel", MacroPage); SpeedDisplay.Size = UDim2.new(0, 200, 0, 30); SpeedDisplay.Position = UDim2.new(0.5, -100, 0.1, 0); SpeedDisplay.Text = "10 KPS"; SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255); SpeedDisplay.BackgroundTransparency = 1; SpeedDisplay.Font = Enum.Font.Michroma; SpeedDisplay.ZIndex = 7
-local SliderFrame = Instance.new("Frame", MacroPage); SliderFrame.Size = UDim2.new(0, 300, 0, 20); SliderFrame.Position = UDim2.new(0.5, -150, 0.25, 0); SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40); SliderFrame.ZIndex = 7
-local SliderFill = Instance.new("Frame", SliderFrame); SliderFill.Size = UDim2.new(0.01, 0, 1, 0); SliderFill.BackgroundColor3 = Color3.fromRGB(130, 130, 145); SliderFill.ZIndex = 8
-local SliderHandle = Instance.new("TextButton", SliderFrame); SliderHandle.Size = UDim2.new(0, 15, 1, 0); SliderHandle.Position = UDim2.new(0.01, -7, 0, 0); SliderHandle.BackgroundColor3 = Color3.fromRGB(255, 255, 255); SliderHandle.Text = ""; SliderHandle.ZIndex = 9; Instance.new("UICorner", SliderHandle).CornerRadius = UDim.new(1, 0)
+-- MACRO UI (ULTRA NEAT)
+local SpeedLbl = Instance.new("TextLabel", MacroP); SpeedLbl.Size = UDim2.new(1, 0, 0, 30); SpeedLbl.Text = "10 KPS"; SpeedLbl.TextColor3 = Color3.fromRGB(255, 255, 255); SpeedLbl.BackgroundTransparency = 1; SpeedLbl.Font = Enum.Font.Michroma; SpeedLbl.TextSize = 12
+local Slider = Instance.new("Frame", MacroP); Slider.Size = UDim2.new(0.9, 0, 0, 4); Slider.Position = UDim2.new(0.05, 0, 0.35, 0); Slider.BackgroundColor3 = Color3.fromRGB(40, 40, 45); Slider.BorderSizePixel = 0
+local Fill = Instance.new("Frame", Slider); Fill.Size = UDim2.new(0.01, 0, 1, 0); Fill.BackgroundColor3 = Color3.fromRGB(0, 160, 255); Fill.BorderSizePixel = 0
+local Dot = Instance.new("TextButton", Slider); Dot.Size = UDim2.new(0, 12, 0, 12); Dot.Position = UDim2.new(0, -6, 0.5, -6); Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Dot.Text = ""; Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
 
-local SwitchFrame = Instance.new("Frame", MacroPage); SwitchFrame.Size = UDim2.new(0, 50, 0, 28); SwitchFrame.Position = UDim2.new(0.7, 0, 0.45, 0); SwitchFrame.BackgroundColor3 = Color3.fromRGB(55, 55, 60); SwitchFrame.ZIndex = 7; Instance.new("UICorner", SwitchFrame).CornerRadius = UDim.new(1, 0)
-local SwitchThumb = Instance.new("Frame", SwitchFrame); SwitchThumb.Size = UDim2.new(0, 24, 0, 24); SwitchThumb.Position = UDim2.new(0, 2, 0.5, -12); SwitchThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255); SwitchThumb.ZIndex = 8; Instance.new("UICorner", SwitchThumb).CornerRadius = UDim.new(1, 0)
-local SwitchBtn = Instance.new("TextButton", SwitchFrame); SwitchBtn.Size = UDim2.new(1, 0, 1, 0); SwitchBtn.BackgroundTransparency = 1; SwitchBtn.Text = ""; SwitchBtn.ZIndex = 9
-local SwitchLabel = Instance.new("TextLabel", MacroPage); SwitchLabel.Size = UDim2.new(0, 120, 0, 28); SwitchLabel.Position = UDim2.new(0, 20, 0.45, 0); SwitchLabel.Text = "BIND MODE:"; SwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 210); SwitchLabel.BackgroundTransparency = 1; SwitchLabel.Font = Enum.Font.Michroma; SwitchLabel.TextSize = 10; SwitchLabel.ZIndex = 7; SwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+local SwFrame = Instance.new("Frame", MacroP); SwFrame.Size = UDim2.new(0, 40, 0, 22); SwFrame.Position = UDim2.new(0.7, 0, 0.55, 0); SwFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45); Instance.new("UICorner", SwFrame).CornerRadius = UDim.new(1, 0)
+local SwThumb = Instance.new("Frame", SwFrame); SwThumb.Size = UDim2.new(0, 18, 0, 18); SwThumb.Position = UDim2.new(0, 2, 0.5, -9); SwThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Instance.new("UICorner", SwThumb).CornerRadius = UDim.new(1, 0)
+local SwBtn = Instance.new("TextButton", SwFrame); SwBtn.Size = UDim2.new(1, 0, 1, 0); SwBtn.BackgroundTransparency = 1; SwBtn.Text = ""
 
-local BindBtn = Instance.new("TextButton", MacroPage); BindBtn.Size = UDim2.new(0, 160, 0, 35); BindBtn.Position = UDim2.new(0.5, -80, 0.7, 0); BindBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); BindBtn.Text = "TOGGLE: F9"; BindBtn.TextColor3 = Color3.fromRGB(200, 200, 210); BindBtn.Font = Enum.Font.Michroma; BindBtn.TextSize = 9; BindBtn.ZIndex = 7; Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 10)
+local Bind = Instance.new("TextButton", MacroP); Bind.Size = UDim2.new(0.9, 0, 0, 30); Bind.Position = UDim2.new(0.05, 0, 0.8, 0); Bind.BackgroundColor3 = Color3.fromRGB(20, 20, 25); Bind.Text = "TOGGLE: F9"; Bind.TextColor3 = Color3.fromRGB(200, 200, 210); Bind.Font = Enum.Font.Michroma; Bind.TextSize = 8; Instance.new("UICorner", Bind)
 
--- [[ PARRY PAGE ]]
-local ParryLabel = Instance.new("TextLabel", ParryPage); ParryLabel.Size = UDim2.new(0, 200, 0, 30); ParryLabel.Position = UDim2.new(0.5, -100, 0.3, 0); ParryLabel.Text = "P-SYSTEM STATUS"; ParryLabel.TextColor3 = Color3.fromRGB(150, 150, 160); ParryLabel.BackgroundTransparency = 1; ParryLabel.Font = Enum.Font.Michroma; ParryLabel.TextSize = 10; ParryLabel.ZIndex = 7
-local ParrySwitchFrame = Instance.new("Frame", ParryPage); ParrySwitchFrame.Size = UDim2.new(0, 60, 0, 32); ParrySwitchFrame.Position = UDim2.new(0.5, -30, 0.45, 0); ParrySwitchFrame.BackgroundColor3 = Color3.fromRGB(75, 215, 100); ParrySwitchFrame.ZIndex = 7; Instance.new("UICorner", ParrySwitchFrame).CornerRadius = UDim.new(1, 0)
-local ParrySwitchThumb = Instance.new("Frame", ParrySwitchFrame); ParrySwitchThumb.Size = UDim2.new(0, 28, 0, 28); ParrySwitchThumb.Position = UDim2.new(1, -30, 0.5, -14); ParrySwitchThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ParrySwitchThumb.ZIndex = 8; Instance.new("UICorner", ParrySwitchThumb).CornerRadius = UDim.new(1, 0)
-local ParrySwitchBtn = Instance.new("TextButton", ParrySwitchFrame); ParrySwitchBtn.Size = UDim2.new(1, 0, 1, 0); ParrySwitchBtn.BackgroundTransparency = 1; ParrySwitchBtn.Text = ""; ParrySwitchBtn.ZIndex = 9
+-- PARRY UI
+local PLbl = Instance.new("TextLabel", ParryP); PLbl.Size = UDim2.new(1, 0, 0, 40); PLbl.Position = UDim2.new(0,0,0.2,0); PLbl.Text = "AUTO-PARRY ACTIVE"; PLbl.TextColor3 = Color3.fromRGB(180, 180, 190); PLbl.BackgroundTransparency = 1; PLbl.Font = Enum.Font.Michroma; PLbl.TextSize = 9
+local PSwFrame = Instance.new("Frame", ParryP); PSwFrame.Size = UDim2.new(0, 40, 0, 22); PSwFrame.Position = UDim2.new(0.5, -20, 0.45, 0); PSwFrame.BackgroundColor3 = Color3.fromRGB(0, 160, 255); Instance.new("UICorner", PSwFrame).CornerRadius = UDim.new(1, 0)
+local PSwThumb = Instance.new("Frame", PSwFrame); PSwThumb.Size = UDim2.new(0, 18, 0, 18); PSwThumb.Position = UDim2.new(1, -20, 0.5, -9); PSwThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Instance.new("UICorner", PSwThumb).CornerRadius = UDim.new(1, 0)
+local PSwBtn = Instance.new("TextButton", PSwFrame); PSwBtn.Size = UDim2.new(1, 0, 1, 0); PSwBtn.BackgroundTransparency = 1; PSwBtn.Text = ""
 
--- [[ GLOBAL FLOATING ACTIVATE BUTTON ]]
-local ActivateBtn = Instance.new("TextButton", ScreenGui); ActivateBtn.Size = UDim2.new(0, 140, 0, 50); ActivateBtn.Position = UDim2.new(0.5, -70, 0.9, 0); ActivateBtn.BackgroundColor3 = Color3.fromRGB(130, 130, 145); ActivateBtn.Text = "ACTIVATE"; ActivateBtn.TextColor3 = Color3.fromRGB(20, 20, 25); ActivateBtn.Font = Enum.Font.Michroma; ActivateBtn.Visible = false; ActivateBtn.ZIndex = 20; Instance.new("UICorner", ActivateBtn).CornerRadius = UDim.new(0, 12); MakeDraggable(ActivateBtn)
+-- FLOAT ACTIVATE
+local Act = Instance.new("TextButton", ScreenGui); Act.Size = UDim2.new(0, 120, 0, 45); Act.Position = UDim2.new(0.5, -60, 0.9, 0); Act.BackgroundColor3 = Color3.fromRGB(0, 160, 255); Act.Text = "ACTIVATE"; Act.TextColor3 = Color3.fromRGB(255, 255, 255); Act.Font = Enum.Font.Michroma; Act.TextSize = 9; Act.Visible = false; Instance.new("UICorner", Act); MakeDraggable(Act)
 
--- [[ LOGIC ]]
+-- [[ PRO SYNC LOGIC ]]
 local function UpdateUI()
-    ActivateBtn.Text = EngineState.MacroToggle and "HALT" or "ACTIVATE"
-    SpeedDisplay.Text = EngineState.TargetSpeed .. " KPS"
-    BindBtn.Text = "TOGGLE: " .. EngineState.ToggleKey.Name
-    local pOn = EngineState.AutoParryActive; TweenService:Create(ParrySwitchThumb, TweenInfo.new(0.2), {Position = pOn and UDim2.new(1, -30, 0.5, -14) or UDim2.new(0, 2, 0.5, -14)}):Play(); TweenService:Create(ParrySwitchFrame, TweenInfo.new(0.2), {BackgroundColor3 = pOn and Color3.fromRGB(75, 215, 100) or Color3.fromRGB(55, 55, 60)}):Play()
-    local isKey = (EngineState.InputMode == "Keybind"); TweenService:Create(SwitchThumb, TweenInfo.new(0.2), {Position = isKey and UDim2.new(1, -26, 0.5, -12) or UDim2.new(0, 2, 0.5, -12)}):Play(); TweenService:Create(SwitchFrame, TweenInfo.new(0.2), {BackgroundColor3 = isKey and Color3.fromRGB(75, 215, 100) or Color3.fromRGB(55, 55, 60)}):Play(); ActivateBtn.Visible = (EngineState.InputMode == "Button")
+    Act.Text = EngineState.MacroToggle and "HALT" or "ACTIVATE"
+    SpeedLbl.Text = EngineState.TargetSpeed .. " KPS"
+    Bind.Text = "TOGGLE: " .. EngineState.ToggleKey.Name
+    local p = EngineState.AutoParryActive; TweenService:Create(PSwThumb, TweenInfo.new(0.2), {Position = p and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play(); TweenService:Create(PSwFrame, TweenInfo.new(0.2), {BackgroundColor3 = p and Color3.fromRGB(0, 160, 255) or Color3.fromRGB(40, 40, 45)}):Play()
+    local k = (EngineState.InputMode == "Keybind"); TweenService:Create(SwThumb, TweenInfo.new(0.2), {Position = k and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play(); TweenService:Create(SwFrame, TweenInfo.new(0.2), {BackgroundColor3 = k and Color3.fromRGB(0, 160, 255) or Color3.fromRGB(40, 40, 45)}):Play(); Act.Visible = (EngineState.InputMode == "Button")
 end
 
-local function ToggleMacro()
+local function Toggle()
     EngineState.MacroToggle = not EngineState.MacroToggle; UpdateUI()
     if EngineState.MacroToggle then MacroConnection = RunService.PreRender:Connect(ExecuteRawInput) elseif MacroConnection then MacroConnection:Disconnect() end
 end
 
-SwitchBtn.MouseButton1Click:Connect(function() EngineState.InputMode = (EngineState.InputMode == "Keybind") and "Button" or "Keybind"; EngineState.MacroToggle = false; UpdateUI() end)
-ActivateBtn.MouseButton1Click:Connect(ToggleMacro)
-ParrySwitchBtn.MouseButton1Click:Connect(function() EngineState.AutoParryActive = not EngineState.AutoParryActive; UpdateUI() end)
+SwBtn.MouseButton1Click:Connect(function() EngineState.InputMode = (EngineState.InputMode == "Keybind") and "Button" or "Keybind"; EngineState.MacroToggle = false; UpdateUI() end)
+Act.MouseButton1Click:Connect(Toggle); PSwBtn.MouseButton1Click:Connect(function() EngineState.AutoParryActive = not EngineState.AutoParryActive; UpdateUI() end)
 
-local listening = false
-BindBtn.MouseButton1Click:Connect(function() listening = true; BindBtn.Text = "..."; UpdateUI() end)
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if listening and input.UserInputType == Enum.UserInputType.Keyboard then
-        EngineState.ToggleKey = input.KeyCode; listening = false; UpdateUI()
-    elseif not gpe and EngineState.InputMode == "Keybind" and input.KeyCode == EngineState.ToggleKey then
-        ToggleMacro()
-    end
+local listen = false
+Bind.MouseButton1Click:Connect(function() listen = true; Bind.Text = "..." end)
+UserInputService.InputBegan:Connect(function(i, g)
+    if listen and i.UserInputType == Enum.UserInputType.Keyboard then EngineState.ToggleKey = i.KeyCode; listen = false; UpdateUI()
+    elseif not g and EngineState.InputMode == "Keybind" and i.KeyCode == EngineState.ToggleKey then Toggle() end
 end)
 
-local draggingSlider = false
-SliderHandle.MouseButton1Down:Connect(function() draggingSlider = true end)
-UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then draggingSlider = false end end)
+local dragging = false
+Dot.MouseButton1Down:Connect(function() dragging = true end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 UserInputService.InputChanged:Connect(function(i)
-    if draggingSlider and (i.Position.X) then
-        local frac = math.clamp((i.Position.X - SliderFrame.AbsolutePosition.X) / SliderFrame.AbsoluteSize.X, 0, 1)
-        EngineState.TargetSpeed = math.round(1 + (frac * 2499)); SliderFill.Size = UDim2.new(frac, 0, 1, 0); SliderHandle.Position = UDim2.new(frac, -7, 0, 0); UpdateUI()
+    if dragging and (i.Position.X) then
+        local frac = math.clamp((i.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
+        EngineState.TargetSpeed = math.round(1 + (frac * 2499)); Fill.Size = UDim2.new(frac, 0, 1, 0); Dot.Position = UDim2.new(frac, -6, 0.5, -6); UpdateUI()
     end
 end)
 
-MacroTabBtn.MouseButton1Click:Connect(function() MacroPage.Visible = true; ParryPage.Visible = false end)
-ParryTabBtn.MouseButton1Click:Connect(function() MacroPage.Visible = false; ParryPage.Visible = true end)
-
-SubmitBtn.MouseButton1Click:Connect(function()
+Submit.MouseButton1Click:Connect(function()
     if IsKeyValid(KeyInput.Text) then
-        AuthFrame.Visible = false; TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(0, 520, 0, 360), Position = UDim2.new(0.5, -260, 0.5, -180)}):Play()
-        task.wait(0.5); Sidebar.Visible = true; PageContainer.Visible = true; MacroPage.Visible = true; if _G.StartParry then _G.StartParry() end; UpdateUI()
+        Auth.Visible = false
+        TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(0, 460, 0, 280), Position = UDim2.new(0.5, -230, 0.5, -140)}):Play()
+        task.wait(0.6); Sidebar.Visible = true; Container.Visible = true; Act.Visible = (EngineState.InputMode == "Button")
+        if _G.StartParry then _G.StartParry() end; UpdateUI()
     end
 end)
 
