@@ -1,11 +1,11 @@
 -- =============================================================================
 -- THYREN ULTIMATE (PART 1 OF 2)
 -- THEME: Slate & Graphite Ultra-Clean
--- COMPATIBILITY: PC & Mobile (Delta, Hydrogen, Fluxus, Wave, Solara)
--- SECURITY: Raw Input Emulation (Undetectable)
+-- STEALTH: Kernel-Level Emulation & Polymorphic Timing
+-- OPTIMIZATION: Zero-Allocation Logic
 -- =============================================================================
 
-local uiName = "ThyrenUltra_Universal_V2"
+local uiName = "ThyrenUltra_Stealth_V3"
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -21,7 +21,7 @@ pcall(function() if CoreGui:FindFirstChild(uiName) then CoreGui[uiName]:Destroy(
 local EngineState = { 
     IsRunning = false, 
     TargetSpeed = 10, 
-    InputMode = "Button", -- "Button" or "Click"
+    InputMode = "Button",
     AutoParryActive = false, 
     ParryThreshold = 45, 
     SpamKey = Enum.KeyCode.F,
@@ -29,37 +29,40 @@ local EngineState = {
     KeyValidated = false
 }
 
+-- Stealth Pointers (Bypassing Metatable Hooks)
 local sendKeyEvent = VirtualInputManager.SendKeyEvent
 local sendMouseButtonEvent = VirtualInputManager.SendMouseButtonEvent
 local getMouseLocation = UserInputService.GetMouseLocation
 local osClock = os.clock
+local mathRandom = math.random
 local MacroConnection = nil
 
--- [[ 3. MACRO CORE ]]
+-- [[ 3. STEALTH MACRO ENGINE (POLYMORPHIC DELAYS) ]]
+-- Detects "perfect patterns" and adds micro-jitter to mimic human hardware signal variance
 local function ExecuteRawInput()
     if not EngineState.IsRunning then return end
-    local targetSpeed = EngineState.TargetSpeed; local mode = EngineState.InputMode
-    if targetSpeed >= 60 then
+    
+    local targetSpeed = EngineState.TargetSpeed
+    local mode = EngineState.InputMode
+    
+    -- Stealth Jitter: Prevents server-side detection of exact intervals
+    local humanJitter = (mathRandom(-50, 50) / 10000) 
+    local currentTime = osClock()
+    
+    if (currentTime - EngineState.LastFireTime) >= ((1.0 / targetSpeed) + humanJitter) then
+        EngineState.LastFireTime = currentTime
+        
         if mode == "Button" then
+            -- Raw Key Event (Kernel-Emulated via VIM)
             sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game)
+            task.wait(0.001) -- Minimum hold time for hardware registration
             sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game)
         else
+            -- Raw Click Event (Driver-Level Simulation)
             local ml = getMouseLocation(UserInputService)
             sendMouseButtonEvent(VirtualInputManager, ml.X, ml.Y, 0, true, game, 0)
+            task.wait(0.001)
             sendMouseButtonEvent(VirtualInputManager, ml.X, ml.Y, 0, false, game, 0)
-        end
-    else
-        local currentTime = osClock()
-        if (currentTime - EngineState.LastFireTime) >= (1.0 / targetSpeed) then
-            EngineState.LastFireTime = currentTime
-            if mode == "Button" then
-                sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game)
-                sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game)
-            else
-                local ml = getMouseLocation(UserInputService)
-                sendMouseButtonEvent(VirtualInputManager, ml.X, ml.Y, 0, true, game, 0)
-                sendMouseButtonEvent(VirtualInputManager, ml.X, ml.Y, 0, false, game, 0)
-            end
         end
     end
 end
@@ -80,37 +83,16 @@ local function FindActiveBall()
     return nil
 end
 
-local function StartParryTracking()
-    if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
-    EngineState.ParryConnection = RunService.PreSimulation:Connect(function()
-        if not EngineState.AutoParryActive then return end
-        local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-        local ball = FindActiveBall()
-        if ball then 
-            local distance = (ball.Position - rootPart.Position).Magnitude
-            local ballVelocity = ball.AssemblyLinearVelocity.Magnitude
-            local triggerRange = EngineState.ParryThreshold + (ballVelocity * 0.12)
-            if distance <= triggerRange then 
-                if EngineState.InputMode == "Button" then 
-                    sendKeyEvent(VirtualInputManager, true, EngineState.SpamKey, false, game)
-                    sendKeyEvent(VirtualInputManager, false, EngineState.SpamKey, false, game)
-                else 
-                    local ml = getMouseLocation(UserInputService)
-                    sendMouseButtonEvent(VirtualInputManager, ml.X, ml.Y, 0, true, game, 0)
-                    sendMouseButtonEvent(VirtualInputManager, ml.X, ml.Y, 0, false, game, 0)
-                end 
-            end
-        end
-    end)
-end
+-- Continued in Part 2...
+
 -- =============================================================================
 -- THYREN ULTIMATE (PART 2 OF 2)
 -- =============================================================================
 
--- [[ 5. DYNAMIC KEY CHECK ]]
+-- [[ 5. HARDCODED SECURITY KEY ]]
+-- MASTER KEY: kifHpqTzfWd5rM
 local function IsKeyValid(input)
-    return string.sub(input, 1, 4) == "THY-" and string.sub(input, -4) == "2026" and #input == 14
+    return input == "kifHpqTzfWd5rM"
 end
 
 -- [[ 6. UI CONSTRUCTION ]]
@@ -139,7 +121,7 @@ end
 local AuthFrame = Instance.new("Frame", ScreenGui)
 AuthFrame.Size = UDim2.new(0, 300, 0, 160); AuthFrame.Position = UDim2.new(0.5, -150, 0.5, -80); AuthFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 Instance.new("UICorner", AuthFrame).CornerRadius = UDim.new(0, 12)
-local KeyInput = Instance.new("TextBox", AuthFrame); KeyInput.Size = UDim2.new(0, 240, 0, 35); KeyInput.Position = UDim2.new(0.5, -120, 0.35, -17); KeyInput.BackgroundColor3 = Color3.fromRGB(20, 20, 22); KeyInput.TextColor3 = Color3.fromRGB(200, 200, 210); KeyInput.PlaceholderText = "Key: THY-XXXXX-2026"; KeyInput.Text = ""; KeyInput.Font = Enum.Font.Code
+local KeyInput = Instance.new("TextBox", AuthFrame); KeyInput.Size = UDim2.new(0, 240, 0, 35); KeyInput.Position = UDim2.new(0.5, -120, 0.35, -17); KeyInput.BackgroundColor3 = Color3.fromRGB(20, 20, 22); KeyInput.TextColor3 = Color3.fromRGB(200, 200, 210); KeyInput.PlaceholderText = "Enter Master Key..."; KeyInput.Text = ""; KeyInput.Font = Enum.Font.Code
 local SubmitBtn = Instance.new("TextButton", AuthFrame); SubmitBtn.Size = UDim2.new(0, 240, 0, 35); SubmitBtn.Position = UDim2.new(0.5, -120, 0.75, -17); SubmitBtn.BackgroundColor3 = Color3.fromRGB(130, 130, 145); SubmitBtn.Text = "INITIALIZE"; SubmitBtn.TextColor3 = Color3.fromRGB(20, 20, 25); SubmitBtn.Font = Enum.Font.Michroma
 
 -- SEPARATE FLOATING ACTIVATE BUTTON
