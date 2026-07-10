@@ -2,7 +2,7 @@
 -- THYREN PRO ELITE (PART 1 OF 2) - KERNEL-LEVEL STEALTH ENGINE
 -- =============================================================================
 
-local uiName = "Thyren_Pro_Replica_V12"
+local uiName = "Thyren_Pro_Exact_Replica_V13"
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -27,7 +27,7 @@ local _send = _VIM.SendKeyEvent
 local _clock = os.clock
 local _wait = task.wait
 
--- [[ PRECISION STEALTH MACRO ENGINE ]]
+-- [[ PRECISION STEALTH MACRO ]]
 local function ExecuteStealthInput()
     if not EngineState.MacroToggle then return end
     local targetKPS = EngineState.TargetSpeed
@@ -43,11 +43,13 @@ local function ExecuteStealthInput()
     end
 end
 
--- [[ ZERO-COOLDOWN AUTO-PARRY ]]
+-- [[ ZERO-COOLDOWN PARRY ENGINE ]]
 _G.StartParry = function()
     RunService.PreSimulation:Connect(function()
         if not EngineState.AutoParryActive then return end
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
         local ball = (function()
             local folder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
             if folder then 
@@ -70,7 +72,7 @@ _G.StartParry = function()
     end)
 end
 -- =============================================================================
--- THYREN PRO ELITE (PART 2 OF 2) - 1:1 TAB REPLICA (3e5266 & 8805c)
+-- THYREN PRO ELITE (PART 2 OF 2) - ABSOLUTE PIXEL REPRODUCTION
 -- =============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -96,25 +98,27 @@ local function MakeDraggable(obj)
     end)
 end
 
--- [[ MAIN CONTAINER ]]
+-- [[ THE MAIN FRAME - MATCHING HEX CODES ]]
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 560, 0, 320); Main.Position = UDim2.new(0.5, -280, 0.5, -160)
-Main.BackgroundColor3 = Color3.fromRGB(75, 75, 75); Main.BorderSizePixel = 0; Main.Active = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 24)
+Main.BackgroundColor3 = Color3.fromRGB(80, 80, 80); Main.BorderSizePixel = 0; Main.Active = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 32)
 MakeDraggable(Main)
 
--- [[ SIDEBAR REPLICA ]]
-local Sidebar = Instance.new("Frame", Main); Sidebar.Size = UDim2.new(0, 165, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(48, 48, 48); Sidebar.BorderSizePixel = 0
-Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 24)
+-- [[ SIDEBAR - MATCHING HEX CODES ]]
+local Sidebar = Instance.new("Frame", Main); Sidebar.Size = UDim2.new(0, 165, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(52, 52, 52); Sidebar.BorderSizePixel = 0
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 32)
 
--- SIDEBAR HEADERS (1:1 SIZE)
-local Header = Instance.new("TextLabel", Sidebar); Header.Size = UDim2.new(1, 0, 0, 40); Header.Text = "THYREN"; Header.TextColor3 = Color3.fromRGB(0, 0, 0); Header.BackgroundTransparency = 1; Header.Font = Enum.Font.Michroma; Header.TextSize = 32; Header.Position = UDim2.new(0,0,0,25)
-local SubHeader = Instance.new("TextLabel", Sidebar); SubHeader.Size = UDim2.new(1, 0, 0, 40); SubHeader.Text = "PRO"; SubHeader.TextColor3 = Color3.fromRGB(0, 0, 0); SubHeader.BackgroundTransparency = 1; SubHeader.Font = Enum.Font.Michroma; SubHeader.TextSize = 28; SubHeader.Position = UDim2.new(0,0,0,75)
+-- HEADER "THYREN" - EXACT FONT SIZE & POSITION
+local Header = Instance.new("TextLabel", Sidebar); Header.Size = UDim2.new(1, 0, 0, 50); Header.Text = "THYREN"; Header.TextColor3 = Color3.fromRGB(0, 0, 0); Header.BackgroundTransparency = 1; Header.Font = Enum.Font.Michroma; Header.TextSize = 38; Header.Position = UDim2.new(0,0,0,20)
 
-local Container = Instance.new("Frame", Main); Container.Size = UDim2.new(1, -190, 1, -20); Container.Position = UDim2.new(0, 190, 0, 10); Container.BackgroundTransparency = 1
+-- SUBHEADER "PRO" - EXACT FONT SIZE & POSITION
+local SubHeader = Instance.new("TextLabel", Sidebar); SubHeader.Size = UDim2.new(1, 0, 0, 40); SubHeader.Text = "PRO"; SubHeader.TextColor3 = Color3.fromRGB(0, 0, 0); SubHeader.BackgroundTransparency = 1; SubHeader.Font = Enum.Font.Michroma; SubHeader.TextSize = 34; SubHeader.Position = UDim2.new(0,0,0,70)
+
+local Container = Instance.new("Frame", Main); Container.Size = UDim2.new(1, -180, 1, -20); Container.Position = UDim2.new(0, 180, 0, 10); Container.BackgroundTransparency = 1
 
 local function CreateTabBtn(name, pos, page)
-    local btn = Instance.new("TextButton", Sidebar); btn.Size = UDim2.new(0.85, 0, 0, 65); btn.Position = UDim2.new(0.075, 0, 0, pos); btn.BackgroundColor3 = Color3.fromRGB(38, 38, 38); btn.Text = name:upper(); btn.TextColor3 = Color3.fromRGB(110, 110, 110); btn.Font = Enum.Font.Michroma; btn.TextSize = 16; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 22)
+    local btn = Instance.new("TextButton", Sidebar); btn.Size = UDim2.new(0.85, 0, 0, 65); btn.Position = UDim2.new(0.075, 0, 0, pos); btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); btn.Text = name:upper(); btn.TextColor3 = Color3.fromRGB(110, 110, 110); btn.Font = Enum.Font.Michroma; btn.TextSize = 18; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 26)
     btn.MouseButton1Click:Connect(function()
         for _, p in pairs(Container:GetChildren()) do p.Visible = (p == page) end
         for _, b in pairs(Sidebar:GetChildren()) do if b:IsA("TextButton") then b.TextColor3 = (b == btn) and Color3.fromRGB(220, 220, 220) or Color3.fromRGB(110, 110, 110) end end
@@ -124,45 +128,53 @@ end
 
 local MacroP = Instance.new("Frame", Container); MacroP.Size = UDim2.new(1, 0, 1, 0); MacroP.BackgroundTransparency = 1
 local ParryP = Instance.new("Frame", Container); ParryP.Size = UDim2.new(1, 0, 1, 0); ParryP.BackgroundTransparency = 1; ParryP.Visible = false
-CreateTabBtn("Macro", 140, MacroP); CreateTabBtn("Auto Parry", 220, ParryP)
+CreateTabBtn("Macro", 140, MacroP); CreateTabBtn("Auto Parry", 225, ParryP)
 
--- [[ TAB 1: 3e5266 (MACRO ENGINE) ]]
-local MTitle = Instance.new("TextLabel", MacroP); MTitle.Size = UDim2.new(1, 0, 0, 40); MTitle.Text = "MACRO ENGINE"; MTitle.TextColor3 = Color3.fromRGB(0,0,0); MTitle.BackgroundTransparency = 1; MTitle.Font = Enum.Font.Michroma; MTitle.TextSize = 24; MTitle.TextXAlignment = Enum.TextXAlignment.Left; MTitle.Position = UDim2.new(0,5,0,5)
-local MLine = Instance.new("Frame", MacroP); MLine.Size = UDim2.new(1, 0, 0, 2); MLine.Position = UDim2.new(0,0,0,55); MLine.BackgroundColor3 = Color3.fromRGB(45,45,45); MLine.BorderSizePixel = 0
+-- [[ PAGE 1: MACRO ENGINE REPLICA ]]
+local MTitle = Instance.new("TextLabel", MacroP); MTitle.Size = UDim2.new(1, 0, 0, 40); MTitle.Text = "MACRO ENGINE"; MTitle.TextColor3 = Color3.fromRGB(0,0,0); MTitle.BackgroundTransparency = 1; MTitle.Font = Enum.Font.Michroma; MTitle.TextSize = 28; MTitle.TextXAlignment = Enum.TextXAlignment.Left; MTitle.Position = UDim2.new(0,5,0,10)
+local MLine = Instance.new("Frame", MacroP); MLine.Size = UDim2.new(1.05, 0, 0, 2); MLine.Position = UDim2.new(-0.05,0,0,65); MLine.BackgroundColor3 = Color3.fromRGB(45,45,45); MLine.BorderSizePixel = 0
 
-local Slider = Instance.new("Frame", MacroP); Slider.Size = UDim2.new(0.65, 0, 0, 2); Slider.Position = UDim2.new(0,5,0.35,0); Slider.BackgroundColor3 = Color3.fromRGB(220,220,220); Slider.BorderSizePixel = 0
-local Dot = Instance.new("TextButton", Slider); Dot.Size = UDim2.new(0, 20, 0, 20); Dot.Position = UDim2.new(0, -10, 0.5, -10); Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Dot.Text = ""; Instance.new("UICorner", Dot).CornerRadius = UDim.new(1,0)
-local KPSLbl = Instance.new("TextLabel", MacroP); KPSLbl.Size = UDim2.new(0, 120, 0, 30); KPSLbl.Position = UDim2.new(0.7, 0, 0.3, 0); KPSLbl.Text = "KPS VALUE"; KPSLbl.TextColor3 = Color3.fromRGB(0,0,0); KPSLbl.BackgroundTransparency = 1; KPSLbl.Font = Enum.Font.Michroma; KPSLbl.TextSize = 14
+-- SLIDER & KPS VALUE REPLICA
+local Slider = Instance.new("Frame", MacroP); Slider.Size = UDim2.new(0.6, 0, 0, 2); Slider.Position = UDim2.new(0,5,0.35,0); Slider.BackgroundColor3 = Color3.fromRGB(220,220,220); Slider.BorderSizePixel = 0
+local Dot = Instance.new("TextButton", Slider); Dot.Size = UDim2.new(0, 24, 0, 24); Dot.Position = UDim2.new(0, -12, 0.5, -12); Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Dot.Text = ""; Instance.new("UICorner", Dot).CornerRadius = UDim.new(1,0)
+local KPSLbl = Instance.new("TextLabel", MacroP); KPSLbl.Size = UDim2.new(0, 140, 0, 30); KPSLbl.Position = UDim2.new(0.65, 0, 0.3, 0); KPSLbl.Text = "KPS VALUE"; KPSLbl.TextColor3 = Color3.fromRGB(0,0,0); KPSLbl.BackgroundTransparency = 1; KPSLbl.Font = Enum.Font.Michroma; KPSLbl.TextSize = 18
 
-local SpamLbl = Instance.new("TextLabel", MacroP); SpamLbl.Size = UDim2.new(0.7, 0, 0, 30); SpamLbl.Position = UDim2.new(0,10,0.58,0); SpamLbl.Text = "MANUAL SPAM / TOGGLE"; SpamLbl.TextColor3 = Color3.fromRGB(0,0,0); SpamLbl.BackgroundTransparency = 1; SpamLbl.Font = Enum.Font.Michroma; SpamLbl.TextSize = 14; SpamLbl.TextXAlignment = Enum.TextXAlignment.Left
-local SwFrame = Instance.new("Frame", MacroP); SwFrame.Size = UDim2.new(0, 65, 0, 32); SwFrame.Position = UDim2.new(0.8, 0, 0.58, 0); SwFrame.BackgroundColor3 = Color3.fromRGB(150,150,150); Instance.new("UICorner", SwFrame).CornerRadius = UDim.new(1,0)
-local SwThumb = Instance.new("Frame", SwFrame); SwThumb.Size = UDim2.new(0, 28, 0, 28); SwThumb.Position = UDim2.new(0,2,0.5,-14); SwThumb.BackgroundColor3 = Color3.fromRGB(255,255,255); Instance.new("UICorner", SwThumb).CornerRadius = UDim.new(1,0)
+-- TOGGLE REPLICA
+local SpamLbl = Instance.new("TextLabel", MacroP); SpamLbl.Size = UDim2.new(0.7, 0, 0, 30); SpamLbl.Position = UDim2.new(0,10,0.58,0); SpamLbl.Text = "MANUAL SPAM / TOGGLE"; SpamLbl.TextColor3 = Color3.fromRGB(0,0,0); SpamLbl.BackgroundTransparency = 1; SpamLbl.Font = Enum.Font.Michroma; SpamLbl.TextSize = 18; SpamLbl.TextXAlignment = Enum.TextXAlignment.Left
+local SwFrame = Instance.new("Frame", MacroP); SwFrame.Size = UDim2.new(0, 75, 0, 35); SwFrame.Position = UDim2.new(0.78, 0, 0.58, 0); SwFrame.BackgroundColor3 = Color3.fromRGB(155,155,155); Instance.new("UICorner", SwFrame).CornerRadius = UDim.new(1,0)
+local SwThumb = Instance.new("Frame", SwFrame); SwThumb.Size = UDim2.new(0, 31, 0, 31); SwThumb.Position = UDim2.new(0,2,0.5,-15.5); SwThumb.BackgroundColor3 = Color3.fromRGB(255,255,255); Instance.new("UICorner", SwThumb).CornerRadius = UDim.new(1,0)
 local SwBtn = Instance.new("TextButton", SwFrame); SwBtn.Size = UDim2.new(1,0,1,0); SwBtn.BackgroundTransparency = 1; SwBtn.Text = ""
 
-local ManualBtn = Instance.new("TextButton", MacroP); ManualBtn.Size = UDim2.new(0.98, 0, 0, 75); ManualBtn.Position = UDim2.new(0, 0, 0.75, 0); ManualBtn.BackgroundColor3 = Color3.fromRGB(52, 52, 52); ManualBtn.Text = "CLICK TO BIND"; ManualBtn.TextColor3 = Color3.fromRGB(110, 110, 110); ManualBtn.Font = Enum.Font.Michroma; ManualBtn.TextSize = 20; Instance.new("UICorner", ManualBtn).CornerRadius = UDim.new(0, 32)
+-- MASSIVE CLICK TO BIND BUTTON (SPAM TRIGGER)
+local Bind = Instance.new("TextButton", MacroP); Bind.Size = UDim2.new(0.98, 0, 0, 85); Bind.Position = UDim2.new(0, 0, 0.75, 0); Bind.BackgroundColor3 = Color3.fromRGB(52, 52, 52); Bind.Text = "CLICK TO BIND"; Bind.TextColor3 = Color3.fromRGB(105, 105, 105); Bind.Font = Enum.Font.Michroma; Bind.TextSize = 22; Instance.new("UICorner", Bind).CornerRadius = UDim.new(0, 38)
 
--- [[ TAB 2: 8805c (AUTO PARRY) ]]
-local PTitle = Instance.new("TextLabel", ParryP); PTitle.Size = UDim2.new(1, 0, 0, 40); PTitle.Text = "AUTO PARRY"; PTitle.TextColor3 = Color3.fromRGB(0,0,0); PTitle.BackgroundTransparency = 1; PTitle.Font = Enum.Font.Michroma; PTitle.TextSize = 24; PTitle.TextXAlignment = Enum.TextXAlignment.Left; PTitle.Position = UDim2.new(0,5,0,5)
-local PLine = Instance.new("Frame", ParryP); PLine.Size = UDim2.new(1, 0, 0, 2); PLine.Position = UDim2.new(0,0,0,55); PLine.BackgroundColor3 = Color3.fromRGB(45,45,45); PLine.BorderSizePixel = 0
+-- [[ PAGE 2: AUTO PARRY REPLICA ]]
+local PTitle = Instance.new("TextLabel", ParryP); PTitle.Size = UDim2.new(1, 0, 0, 40); PTitle.Text = "AUTO PARRY"; PTitle.TextColor3 = Color3.fromRGB(0,0,0); PTitle.BackgroundTransparency = 1; PTitle.Font = Enum.Font.Michroma; PTitle.TextSize = 28; PTitle.TextXAlignment = Enum.TextXAlignment.Left; PTitle.Position = UDim2.new(0,5,0,10)
+local PLine = Instance.new("Frame", ParryP); PLine.Size = UDim2.new(1.05, 0, 0, 2); PLine.Position = UDim2.new(-0.05,0,0,65); PLine.BackgroundColor3 = Color3.fromRGB(45,45,45); PLine.BorderSizePixel = 0
 
-local POnOff = Instance.new("TextLabel", ParryP); POnOff.Size = UDim2.new(0.7, 0, 0, 30); POnOff.Position = UDim2.new(0,10,0.38,0); POnOff.Text = "AUTO PARRY ON/OFF"; POnOff.TextColor3 = Color3.fromRGB(0,0,0); POnOff.BackgroundTransparency = 1; POnOff.Font = Enum.Font.Michroma; POnOff.TextSize = 16; POnOff.TextXAlignment = Enum.TextXAlignment.Left
-local PSwFrame = Instance.new("Frame", ParryP); PSwFrame.Size = UDim2.new(0, 65, 0, 34); PSwFrame.Position = UDim2.new(0.8, 0, 0.38, 0); PSwFrame.BackgroundColor3 = Color3.fromRGB(150,150,150); Instance.new("UICorner", PSwFrame).CornerRadius = UDim.new(1,0)
-local PSwThumb = Instance.new("Frame", PSwFrame); PSwThumb.Size = UDim2.new(0, 30, 0, 30); PSwThumb.Position = UDim2.new(0,2,0.5,-15); PSwThumb.BackgroundColor3 = Color3.fromRGB(255,255,255); Instance.new("UICorner", PSwThumb).CornerRadius = UDim.new(1,0)
+local POnOff = Instance.new("TextLabel", ParryP); POnOff.Size = UDim2.new(0.7, 0, 0, 30); POnOff.Position = UDim2.new(0,10,0.38,0); POnOff.Text = "AUTO PARRY ON/OFF"; POnOff.TextColor3 = Color3.fromRGB(0,0,0); POnOff.BackgroundTransparency = 1; POnOff.Font = Enum.Font.Michroma; POnOff.TextSize = 22; POnOff.TextXAlignment = Enum.TextXAlignment.Left
+local PSwFrame = Instance.new("Frame", ParryP); PSwFrame.Size = UDim2.new(0, 80, 0, 40); PSwFrame.Position = UDim2.new(0.8, -10, 0.38, 0); PSwFrame.BackgroundColor3 = Color3.fromRGB(155,155,155); Instance.new("UICorner", PSwFrame).CornerRadius = UDim.new(1,0)
+local PSwThumb = Instance.new("Frame", PSwFrame); PSwThumb.Size = UDim2.new(0, 36, 0, 36); PSwThumb.Position = UDim2.new(0,2,0.5,-18); PSwThumb.BackgroundColor3 = Color3.fromRGB(255,255,255); Instance.new("UICorner", PSwThumb).CornerRadius = UDim.new(1,0)
 local PSwBtn = Instance.new("TextButton", PSwFrame); PSwBtn.Size = UDim2.new(1,0,1,0); PSwBtn.BackgroundTransparency = 1; PSwBtn.Text = ""
+
+-- [[ SEPARATE FLOATING ACTIVATE BUTTON ]]
+local Act = Instance.new("TextButton", ScreenGui); Act.Size = UDim2.new(0, 200, 0, 80); Act.Position = UDim2.new(0.5, -100, 0.8, 0); Act.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Act.BackgroundTransparency = 0.92; Act.Text = "ACTIVATE"; Act.TextColor3 = Color3.fromRGB(255, 255, 255); Act.Font = Enum.Font.Michroma; Act.TextSize = 22; Instance.new("UICorner", Act).CornerRadius = UDim.new(0, 24); MakeDraggable(Act)
+local ActGlow = Instance.new("Frame", Act); ActGlow.Size = UDim2.new(1, 8, 1, 8); ActGlow.Position = UDim2.new(0,-4,0,-4); ActGlow.BackgroundColor3 = Color3.fromRGB(0, 180, 255); ActGlow.BackgroundTransparency = 0.8; ActGlow.ZIndex = -1; Instance.new("UICorner", ActGlow).CornerRadius = UDim.new(0, 28)
 
 -- [[ SYSTEM SYNC ]]
 local function UpdateUI()
     local isKey = (EngineState.InputMode == "Keybind")
-    TweenService:Create(SwThumb, TweenInfo.new(0.25), {Position = isKey and UDim2.new(1, -30, 0.5, -14) or UDim2.new(0, 2, 0.5, -14)}):Play()
-    TweenService:Create(SwFrame, TweenInfo.new(0.25), {BackgroundColor3 = isKey and Color3.fromRGB(0, 180, 255) or Color3.fromRGB(150,150,150)}):Play()
+    TweenService:Create(SwThumb, TweenInfo.new(0.2), {Position = isKey and UDim2.new(1, -33, 0.5, -15.5) or UDim2.new(0, 2, 0.5, -15.5)}):Play()
+    TweenService:Create(SwFrame, TweenInfo.new(0.2), {BackgroundColor3 = isKey and Color3.fromRGB(0, 180, 255) or Color3.fromRGB(155,155,155)}):Play()
     local p = EngineState.AutoParryActive
-    TweenService:Create(PSwThumb, TweenInfo.new(0.25), {Position = p and UDim2.new(1, -32, 0.5, -15) or UDim2.new(0, 2, 0.5, -15)}):Play()
-    TweenService:Create(PSwFrame, TweenInfo.new(0.25), {BackgroundColor3 = p and Color3.fromRGB(0, 180, 255) or Color3.fromRGB(150,150,150)}):Play()
-    ManualBtn.Text = isKey and "BIND: " .. EngineState.ToggleKey.Name or "CLICK TO SPAM"
+    TweenService:Create(PSwThumb, TweenInfo.new(0.2), {Position = p and UDim2.new(1, -38, 0.5, -18) or UDim2.new(0, 2, 0.5, -18)}):Play()
+    TweenService:Create(PSwFrame, TweenInfo.new(0.2), {BackgroundColor3 = p and Color3.fromRGB(0, 180, 255) or Color3.fromRGB(155,155,155)}):Play()
+    Act.Text = EngineState.MacroToggle and "HALT CORE" or "ACTIVATE"
+    Bind.Text = isKey and "BIND: " .. EngineState.ToggleKey.Name or "MANUAL SPAM / TOGGLE"
     KPSLbl.Text = EngineState.TargetSpeed .. " KPS VALUE"
 end
 
-local function Toggle()
+local function MacroToggleLogic()
     EngineState.MacroToggle = not EngineState.MacroToggle
     if EngineState.MacroToggle then MacroConn = game:GetService("RunService").PreRender:Connect(ExecuteStealthInput)
     elseif MacroConn then MacroConn:Disconnect() end
@@ -170,15 +182,17 @@ end
 
 SwBtn.MouseButton1Click:Connect(function() EngineState.InputMode = (EngineState.InputMode == "Keybind") and "Button" or "Keybind"; UpdateUI() end)
 PSwBtn.MouseButton1Click:Connect(function() EngineState.AutoParryActive = not EngineState.AutoParryActive; UpdateUI() end)
+Act.MouseButton1Click:Connect(MacroToggleLogic)
 
-local listening = false
-ManualBtn.MouseButton1Click:Connect(function()
-    if EngineState.InputMode == "Button" then Toggle() else listening = true; ManualBtn.Text = "WAITING..." end
+local listen = false
+Bind.MouseButton1Click:Connect(function()
+    if EngineState.InputMode == "Button" then MacroToggleLogic(); UpdateUI()
+    else listen = true; Bind.Text = "WAITING..." end
 end)
 
 UserInputService.InputBegan:Connect(function(i, g)
-    if listening and i.UserInputType == Enum.UserInputType.Keyboard then 
-        EngineState.ToggleKey = i.KeyCode; listening = false; UpdateUI()
+    if listen and i.UserInputType == Enum.UserInputType.Keyboard then 
+        EngineState.ToggleKey = i.KeyCode; listen = false; UpdateUI()
     elseif not g and EngineState.InputMode == "Keybind" and i.KeyCode == EngineState.ToggleKey then Toggle() end
 end)
 
@@ -188,7 +202,7 @@ UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserI
 UserInputService.InputChanged:Connect(function(i)
     if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
         local frac = math.clamp((i.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
-        EngineState.TargetSpeed = math.round(1 + (frac * 2499)); Dot.Position = UDim2.new(frac, -10, 0.5, -10); UpdateUI()
+        EngineState.TargetSpeed = math.round(1 + (frac * 2499)); Dot.Position = UDim2.new(frac, -12, 0.5, -12); UpdateUI()
     end
 end)
 
