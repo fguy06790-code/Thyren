@@ -2,6 +2,19 @@
 -- GRAPHITE GRAY MINIMAL PANEL (SUPER LAG-EFFICIENT)
 -- =============================================================================
 
+-- DELETE PREVIOUS INSTANCES
+pcall(function()
+    local cg = game:GetService("CoreGui")
+    local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+
+    if cg:FindFirstChild("GraphiteMinimalUI") then
+        cg.GraphiteMinimalUI:Destroy()
+    end
+    if pg and pg:FindFirstChild("GraphiteMinimalUI") then
+        pg.GraphiteMinimalUI:Destroy()
+    end
+end)
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -16,7 +29,7 @@ local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
     ModeSelection = "KPS",
-    RuntimeHotkey = nil,
+    RuntimeHotkey = Enum.KeyCode.G, -- default toggle key
     IsBinding = false,
     AutoParryActive = false,
     SpamKey = Enum.KeyCode.F,
@@ -64,7 +77,6 @@ local function FindBall()
     end
     return nil
 end
-
 -- ADVANCED AUTO PARRY
 local AntiCurve = false
 local ParryDist = 8
@@ -145,7 +157,7 @@ local function RunMacro()
     if not EngineState.IsRunning then return end
 
     local speed = EngineState.TargetSpeed
-    local key = EngineState.SpamKey
+    local key = EngineState.RuntimeHotkey
 
     if speed >= 60 then
         VirtualInputManager:SendKeyEvent(true, key, false, game)
@@ -177,13 +189,14 @@ end
 local function ToggleMacro()
     if EngineState.IsRunning then StopMacro() else StartMacro() end
 end
+
 -- ============================
 -- MINIMAL GRAPHITE PANEL UI
 -- ============================
 
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 260, 0, 180)
-Panel.Position = UDim2.new(0.5, -130, 0.5, -90)
+Panel.Size = UDim2.new(0, 260, 0, 210)
+Panel.Position = UDim2.new(0.5, -130, 0.5, -105)
 Panel.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 Panel.Active = true
 Panel.Draggable = true
@@ -211,10 +224,22 @@ MacroBtn.TextSize = 14
 MacroBtn.Parent = Panel
 ApplyRadius(MacroBtn, 6)
 
+-- MACRO KEYBIND BUTTON
+local BindBtn = Instance.new("TextButton")
+BindBtn.Size = UDim2.new(1, -20, 0, 28)
+BindBtn.Position = UDim2.new(0, 10, 0, 70)
+BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+BindBtn.Text = "BIND KEY: [" .. EngineState.RuntimeHotkey.Name .. "]"
+BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
+BindBtn.Font = Enum.Font.Michroma
+BindBtn.TextSize = 14
+BindBtn.Parent = Panel
+ApplyRadius(BindBtn, 6)
+
 -- AUTO PARRY TOGGLE
 local ParryBtn = Instance.new("TextButton")
 ParryBtn.Size = UDim2.new(1, -20, 0, 28)
-ParryBtn.Position = UDim2.new(0, 10, 0, 70)
+ParryBtn.Position = UDim2.new(0, 10, 0, 105)
 ParryBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ParryBtn.Text = "AUTO PARRY: OFF"
 ParryBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
@@ -226,7 +251,7 @@ ApplyRadius(ParryBtn, 6)
 -- MODE SWITCH
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Size = UDim2.new(1, -20, 0, 28)
-ModeBtn.Position = UDim2.new(0, 10, 0, 105)
+ModeBtn.Position = UDim2.new(0, 10, 0, 140)
 ModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
@@ -234,11 +259,10 @@ ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.TextSize = 14
 ModeBtn.Parent = Panel
 ApplyRadius(ModeBtn, 6)
-
 -- SPEED SLIDER
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(1, -20, 0, 6)
-SliderTrack.Position = UDim2.new(0, 10, 0, 140)
+SliderTrack.Position = UDim2.new(0, 10, 0, 175)
 SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SliderTrack.Parent = Panel
 ApplyRadius(SliderTrack, 3)
@@ -259,23 +283,24 @@ ApplyRadius(SliderButton, 7)
 
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
-SpeedLabel.Position = UDim2.new(0, 0, 0, 155)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 190)
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Text = "10 KPS"
 SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedLabel.Font = Enum.Font.Michroma
 SpeedLabel.TextSize = 14
 SpeedLabel.Parent = Panel
+
 -- ============================
 -- UI LOGIC
 -- ============================
 
 local function UpdateUI()
     SpeedLabel.Text = EngineState.TargetSpeed .. " KPS"
-
     MacroBtn.Text = EngineState.IsRunning and "MACRO: ON" or "MACRO: OFF"
     ParryBtn.Text = EngineState.AutoParryActive and "AUTO PARRY: ON" or "AUTO PARRY: OFF"
     ModeBtn.Text = "MODE: " .. EngineState.ModeSelection
+    BindBtn.Text = "BIND KEY: [" .. EngineState.RuntimeHotkey.Name .. "]"
 end
 
 -- MACRO BUTTON
@@ -295,6 +320,28 @@ end)
 ModeBtn.MouseButton1Click:Connect(function()
     EngineState.ModeSelection = (EngineState.ModeSelection == "KPS") and "CPS" or "KPS"
     UpdateUI()
+end)
+
+-- KEYBIND BUTTON
+BindBtn.MouseButton1Click:Connect(function()
+    EngineState.IsBinding = true
+    BindBtn.Text = "PRESS ANY KEY..."
+end)
+
+UserInputService.InputBegan:Connect(function(input)
+    if EngineState.IsBinding then
+        if input.KeyCode ~= Enum.KeyCode.Unknown then
+            EngineState.RuntimeHotkey = input.KeyCode
+            EngineState.IsBinding = false
+            UpdateUI()
+        end
+        return
+    end
+
+    if input.KeyCode == EngineState.RuntimeHotkey then
+        ToggleMacro()
+        UpdateUI()
+    end
 end)
 
 -- SLIDER DRAGGING
@@ -328,3 +375,4 @@ end)
 
 -- FINAL UPDATE
 UpdateUI()
+
