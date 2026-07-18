@@ -1,15 +1,10 @@
 -- =============================================================================
--- GRAPHITE GRAY MINIMAL PANEL (SUPER LAG-EFFICIENT)
+-- GRAPHITE MINIMAL PANEL (SUPER LAG-EFFICIENT)
 -- =============================================================================
 
 -- DELETE PREVIOUS INSTANCES
 pcall(function()
-    local cg = game:GetService("CoreGui")
     local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
-
-    if cg:FindFirstChild("GraphiteMinimalUI") then
-        cg.GraphiteMinimalUI:Destroy()
-    end
     if pg and pg:FindFirstChild("GraphiteMinimalUI") then
         pg.GraphiteMinimalUI:Destroy()
     end
@@ -29,10 +24,10 @@ local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
     ModeSelection = "KPS",
-    RuntimeHotkey = Enum.KeyCode.G, -- default toggle key
+    ToggleKey = Enum.KeyCode.G,   -- MACRO TOGGLE KEY
+    SpamKey = Enum.KeyCode.F,     -- ALWAYS SPAM F
     IsBinding = false,
     AutoParryActive = false,
-    SpamKey = Enum.KeyCode.F,
     LowEndMode = false
 }
 
@@ -50,18 +45,18 @@ local function ApplyRadius(obj, r)
 end
 
 local function fireParry()
-    VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, false, game)
-    VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, false, game)
+    VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, true, nil)
+    VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, true, nil)
 
     task.defer(function()
-        VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, false, game)
-        VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, false, game)
+        VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, true, nil)
+        VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, true, nil)
     end)
 
     task.spawn(function()
         task.wait(0.0005)
-        VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, false, game)
-        VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, false, game)
+        VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, true, nil)
+        VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, true, nil)
     end)
 end
 
@@ -149,7 +144,7 @@ local function StopParry()
     end
 end
 
--- MACRO ENGINE
+-- UNIVERSAL MACRO ENGINE (ALWAYS SPAMS F)
 local MacroConnection = nil
 local lastFire = 0
 
@@ -157,28 +152,30 @@ local function RunMacro()
     if not EngineState.IsRunning then return end
 
     local speed = EngineState.TargetSpeed
-    local key = EngineState.RuntimeHotkey
+    local key = EngineState.SpamKey  -- ALWAYS F
 
     if speed >= 60 then
-        VirtualInputManager:SendKeyEvent(true, key, false, game)
-        VirtualInputManager:SendKeyEvent(false, key, false, game)
-        VirtualInputManager:SendKeyEvent(true, key, false, game)
-        VirtualInputManager:SendKeyEvent(false, key, false, game)
-    else
-        local now = os.clock()
-        if now - lastFire >= 1 / speed then
-            lastFire = now
-            VirtualInputManager:SendKeyEvent(true, key, false, game)
-            VirtualInputManager:SendKeyEvent(false, key, false, game)
-        end
+        VirtualInputManager:SendKeyEvent(true, key, true, nil)
+        VirtualInputManager:SendKeyEvent(false, key, true, nil)
+        VirtualInputManager:SendKeyEvent(true, key, true, nil)
+        VirtualInputManager:SendKeyEvent(false, key, true, nil)
+        return
+    end
+
+    local now = os.clock()
+    if now - lastFire >= 1 / speed then
+        lastFire = now
+        VirtualInputManager:SendKeyEvent(true, key, true, nil)
+        VirtualInputManager:SendKeyEvent(false, key, true, nil)
     end
 end
 
 local function StartMacro()
     EngineState.IsRunning = true
     lastFire = os.clock()
+
     if MacroConnection then MacroConnection:Disconnect() end
-    MacroConnection = RunService.PreRender:Connect(RunMacro)
+    MacroConnection = RunService.Heartbeat:Connect(RunMacro)
 end
 
 local function StopMacro()
@@ -189,7 +186,6 @@ end
 local function ToggleMacro()
     if EngineState.IsRunning then StopMacro() else StartMacro() end
 end
-
 -- ============================
 -- MINIMAL GRAPHITE PANEL UI
 -- ============================
@@ -229,7 +225,7 @@ local BindBtn = Instance.new("TextButton")
 BindBtn.Size = UDim2.new(1, -20, 0, 28)
 BindBtn.Position = UDim2.new(0, 10, 0, 70)
 BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-BindBtn.Text = "BIND KEY: [" .. EngineState.RuntimeHotkey.Name .. "]"
+BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
 BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 BindBtn.Font = Enum.Font.Michroma
 BindBtn.TextSize = 14
@@ -300,7 +296,7 @@ local function UpdateUI()
     MacroBtn.Text = EngineState.IsRunning and "MACRO: ON" or "MACRO: OFF"
     ParryBtn.Text = EngineState.AutoParryActive and "AUTO PARRY: ON" or "AUTO PARRY: OFF"
     ModeBtn.Text = "MODE: " .. EngineState.ModeSelection
-    BindBtn.Text = "BIND KEY: [" .. EngineState.RuntimeHotkey.Name .. "]"
+    BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
 end
 
 -- MACRO BUTTON
@@ -331,14 +327,14 @@ end)
 UserInputService.InputBegan:Connect(function(input)
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown then
-            EngineState.RuntimeHotkey = input.KeyCode
+            EngineState.ToggleKey = input.KeyCode
             EngineState.IsBinding = false
             UpdateUI()
         end
         return
     end
 
-    if input.KeyCode == EngineState.RuntimeHotkey then
+    if input.KeyCode == EngineState.ToggleKey then
         ToggleMacro()
         UpdateUI()
     end
@@ -375,4 +371,3 @@ end)
 
 -- FINAL UPDATE
 UpdateUI()
-
