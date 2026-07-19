@@ -1,5 +1,5 @@
 -- =============================================================================
--- GRAPHITE PANEL (OPTIMIZED + ORIGINAL SIZE + MOBILE SLIDER + VIM F)
+-- GRAPHITE PANEL (TEXTBOX SPEED INPUT + VIM F + CPS/KPS + MOBILE SAFE)
 -- =============================================================================
 
 pcall(function()
@@ -37,8 +37,6 @@ local function Round(obj, r)
     c.CornerRadius = UDim.new(0, r)
     c.Parent = obj
 end
-
-local SCALE = 1
 local function FireParry()
     VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
     VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
@@ -109,6 +107,7 @@ local function RunMacro()
     if EngineState.ModeSelection == "KPS" then
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+
     else
         local cps = EngineState.TargetSpeed
         local presses = math.clamp(math.floor(cps / 60), 1, 50)
@@ -198,32 +197,22 @@ ModeBtn.TextSize = 14
 ModeBtn.Parent = Panel
 Round(ModeBtn, 8)
 
-local SliderTrack = Instance.new("Frame")
-SliderTrack.Size = UDim2.new(1, -20, 0, 6)
-SliderTrack.Position = UDim2.new(0, 10, 0, 175)
-SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-SliderTrack.Active = true
-SliderTrack.Parent = Panel
-Round(SliderTrack, 4)
-
-local SliderFill = Instance.new("Frame")
-SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(180, 180, 200)
-SliderFill.Parent = SliderTrack
-Round(SliderFill, 4)
-
-local SliderButton = Instance.new("TextButton")
-SliderButton.Size = UDim2.new(0, 14, 0, 14)
-SliderButton.Position = UDim2.new(0.01, -7, 0.5, -7)
-SliderButton.BackgroundColor3 = Color3.fromRGB(220, 220, 230)
-SliderButton.Text = ""
-SliderButton.Active = true
-SliderButton.Parent = SliderTrack
-Round(SliderButton, 7)
+-- TEXTBOX SPEED INPUT
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Size = UDim2.new(1, -20, 0, 28)
+SpeedBox.Position = UDim2.new(0, 10, 0, 175)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+SpeedBox.Text = "10"
+SpeedBox.PlaceholderText = "1 - 2500"
+SpeedBox.TextColor3 = Color3.fromRGB(230, 230, 240)
+SpeedBox.Font = Enum.Font.Michroma
+SpeedBox.TextSize = 14
+SpeedBox.Parent = Panel
+Round(SpeedBox, 8)
 
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
-SpeedLabel.Position = UDim2.new(0, 0, 0, 190)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 205)
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Text = "10 KPS"
 SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
@@ -277,55 +266,16 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- FINAL WORKING SLIDER
-local dragging = false
-local dragInput = nil
+-- TEXTBOX SPEED INPUT
+SpeedBox.FocusLost:Connect(function()
+    local num = tonumber(SpeedBox.Text)
+    if not num then return end
 
-SliderButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragInput = input
-    end
-end)
+    num = math.clamp(num, 1, 2500)
+    EngineState.TargetSpeed = num
+    SpeedBox.Text = tostring(num)
 
-SliderButton.InputEnded:Connect(function(input)
-    if input == dragInput then
-        dragging = false
-        dragInput = nil
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if dragging and input == dragInput and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local pos = input.Position.X
-        local base = SliderTrack.AbsolutePosition.X
-        local size = SliderTrack.AbsoluteSize.X
-
-        local fraction = math.clamp((pos - base) / size, 0, 1)
-        local calculated = math.floor(1 + (fraction * 2499))
-
-        EngineState.TargetSpeed = calculated
-        SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
-        SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
-        SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
-    end
-end)
-
-UIS.TouchMoved:Connect(function(touch)
-    if dragging and dragInput and touch == dragInput then
-        local pos = touch.Position.X
-        local base = SliderTrack.AbsolutePosition.X
-        local size = SliderTrack.AbsoluteSize.X
-
-        local fraction = math.clamp((pos - base) / size, 0, 1)
-        local calculated = math.floor(1 + (fraction * 2499))
-
-        EngineState.TargetSpeed = calculated
-        SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
-        SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
-        SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
-    end
+    UpdateUI()
 end)
 
 UpdateUI()
