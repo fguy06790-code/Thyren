@@ -20,7 +20,7 @@ local Stats = game:GetService("Stats")
 local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
-    ModeSelection = "KPS",   -- "KPS" or "CPS"
+    ModeSelection = "KPS",
     ToggleKey = Enum.KeyCode.G,
     SpamKey = Enum.KeyCode.F,
     IsBinding = false,
@@ -38,7 +38,7 @@ local function Round(obj, r)
     c.Parent = obj
 end
 
-local SCALE = 1.0
+local SCALE = 1
 local function FireParry()
     VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
     VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
@@ -103,15 +103,13 @@ local function RunMacro()
     if not EngineState.IsRunning then return end
 
     local now = os.clock()
-    if now - lastFire < 1/60 then return end -- 60Hz tick
+    if now - lastFire < 1/60 then return end
     lastFire = now
 
     if EngineState.ModeSelection == "KPS" then
-        -- KPS: 1 press per tick
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
     else
-        -- CPS: multiple presses per tick
         local cps = EngineState.TargetSpeed
         local presses = math.clamp(math.floor(cps / 60), 1, 50)
 
@@ -139,96 +137,98 @@ local function ToggleMacro()
     if EngineState.IsRunning then StopMacro() else StartMacro() end
 end
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 260 * SCALE, 0, 210 * SCALE)
-Panel.Position = UDim2.new(0.5, -(260 * SCALE)/2, 0.5, -(210 * SCALE)/2)
+Panel.Size = UDim2.new(0, 260, 0, 210)
+Panel.Position = UDim2.new(0.5, -130, 0.5, -105)
 Panel.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 Panel.Active = true
 Panel.Draggable = true
 Panel.Parent = ScreenGui
-Round(Panel, 12 * SCALE)
+Round(Panel, 12)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 28 * SCALE)
+Title.Size = UDim2.new(1, 0, 0, 28)
 Title.BackgroundTransparency = 1
 Title.Text = "GRAPHITE PANEL"
 Title.TextColor3 = Color3.fromRGB(220, 220, 230)
 Title.Font = Enum.Font.Michroma
-Title.TextSize = 16 * SCALE
+Title.TextSize = 16
 Title.Parent = Panel
 
 local MacroBtn = Instance.new("TextButton")
-MacroBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
-MacroBtn.Position = UDim2.new(0, 10 * SCALE, 0, 35 * SCALE)
+MacroBtn.Size = UDim2.new(1, -20, 0, 28)
+MacroBtn.Position = UDim2.new(0, 10, 0, 35)
 MacroBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 MacroBtn.Text = "MACRO: OFF"
 MacroBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 MacroBtn.Font = Enum.Font.Michroma
-MacroBtn.TextSize = 14 * SCALE
+MacroBtn.TextSize = 14
 MacroBtn.Parent = Panel
-Round(MacroBtn, 8 * SCALE)
+Round(MacroBtn, 8)
 
 local BindBtn = Instance.new("TextButton")
-BindBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
-BindBtn.Position = UDim2.new(0, 10 * SCALE, 0, 70 * SCALE)
+BindBtn.Size = UDim2.new(1, -20, 0, 28)
+BindBtn.Position = UDim2.new(0, 10, 0, 70)
 BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
 BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 BindBtn.Font = Enum.Font.Michroma
-BindBtn.TextSize = 14 * SCALE
+BindBtn.TextSize = 14
 BindBtn.Parent = Panel
-Round(BindBtn, 8 * SCALE)
+Round(BindBtn, 8)
 
 local ParryBtn = Instance.new("TextButton")
-ParryBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
-ParryBtn.Position = UDim2.new(0, 10 * SCALE, 0, 105 * SCALE)
+ParryBtn.Size = UDim2.new(1, -20, 0, 28)
+ParryBtn.Position = UDim2.new(0, 10, 0, 105)
 ParryBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ParryBtn.Text = "AUTO PARRY: OFF"
 ParryBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ParryBtn.Font = Enum.Font.Michroma
-ParryBtn.TextSize = 14 * SCALE
+ParryBtn.TextSize = 14
 ParryBtn.Parent = Panel
-Round(ParryBtn, 8 * SCALE)
+Round(ParryBtn, 8)
 
 local ModeBtn = Instance.new("TextButton")
-ModeBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
-ModeBtn.Position = UDim2.new(0, 10 * SCALE, 0, 140 * SCALE)
+ModeBtn.Size = UDim2.new(1, -20, 0, 28)
+ModeBtn.Position = UDim2.new(0, 10, 0, 140)
 ModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ModeBtn.Font = Enum.Font.Michroma
-ModeBtn.TextSize = 14 * SCALE
+ModeBtn.TextSize = 14
 ModeBtn.Parent = Panel
-Round(ModeBtn, 8 * SCALE)
+Round(ModeBtn, 8)
 
 local SliderTrack = Instance.new("Frame")
-SliderTrack.Size = UDim2.new(1, -20 * SCALE, 0, 6 * SCALE)
-SliderTrack.Position = UDim2.new(0, 10 * SCALE, 0, 175 * SCALE)
+SliderTrack.Size = UDim2.new(1, -20, 0, 6)
+SliderTrack.Position = UDim2.new(0, 10, 0, 175)
 SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+SliderTrack.Active = true
 SliderTrack.Parent = Panel
-Round(SliderTrack, 4 * SCALE)
+Round(SliderTrack, 4)
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
 SliderFill.BackgroundColor3 = Color3.fromRGB(180, 180, 200)
 SliderFill.Parent = SliderTrack
-Round(SliderFill, 4 * SCALE)
+Round(SliderFill, 4)
 
 local SliderButton = Instance.new("TextButton")
-SliderButton.Size = UDim2.new(0, 14 * SCALE, 0, 14 * SCALE)
-SliderButton.Position = UDim2.new(0.01, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
+SliderButton.Size = UDim2.new(0, 14, 0, 14)
+SliderButton.Position = UDim2.new(0.01, -7, 0.5, -7)
 SliderButton.BackgroundColor3 = Color3.fromRGB(220, 220, 230)
 SliderButton.Text = ""
+SliderButton.Active = true
 SliderButton.Parent = SliderTrack
-Round(SliderButton, 7 * SCALE)
+Round(SliderButton, 7)
 
 local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(1, 0, 0, 20 * SCALE)
-SpeedLabel.Position = UDim2.new(0, 0, 0, 190 * SCALE)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 190)
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Text = "10 KPS"
 SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedLabel.Font = Enum.Font.Michroma
-SpeedLabel.TextSize = 14 * SCALE
+SpeedLabel.TextSize = 14
 SpeedLabel.Parent = Panel
 local function UpdateUI()
     SpeedLabel.Text = EngineState.TargetSpeed .. " " .. EngineState.ModeSelection
@@ -277,6 +277,7 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
+-- FINAL WORKING SLIDER
 local dragging = false
 local dragInput = nil
 
@@ -306,7 +307,7 @@ UIS.InputChanged:Connect(function(input)
 
         EngineState.TargetSpeed = calculated
         SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
-        SliderButton.Position = UDim2.new(fraction, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
+        SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
         SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
     end
 end)
@@ -322,7 +323,7 @@ UIS.TouchMoved:Connect(function(touch)
 
         EngineState.TargetSpeed = calculated
         SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
-        SliderButton.Position = UDim2.new(fraction, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
+        SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
         SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
     end
 end)
