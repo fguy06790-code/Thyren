@@ -1,8 +1,7 @@
 -- =============================================================================
--- GRAPHITE PANEL (FULLY OPTIMIZED + ORIGINAL SIZE + MOBILE SLIDER)
+-- GRAPHITE PANEL (OPTIMIZED + ORIGINAL SIZE + MOBILE SLIDER + VIM F)
 -- =============================================================================
 
--- DELETE PREVIOUS INSTANCES
 pcall(function()
     local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
     if pg and pg:FindFirstChild("GraphiteMinimalUI") then
@@ -18,11 +17,10 @@ local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 local Stats = game:GetService("Stats")
 
--- ENGINE STATE
 local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
-    ModeSelection = "KPS",   -- KPS or CPS
+    ModeSelection = "KPS",   -- "KPS" or "CPS"
     ToggleKey = Enum.KeyCode.G,
     SpamKey = Enum.KeyCode.F,
     IsBinding = false,
@@ -40,7 +38,7 @@ local function Round(obj, r)
     c.Parent = obj
 end
 
-local SCALE = 1
+local SCALE = 1.0
 local function FireParry()
     VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
     VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
@@ -105,16 +103,15 @@ local function RunMacro()
     if not EngineState.IsRunning then return end
 
     local now = os.clock()
-    if now - lastFire < 1/60 then return end  -- 60Hz tick
+    if now - lastFire < 1/60 then return end -- 60Hz tick
     lastFire = now
 
     if EngineState.ModeSelection == "KPS" then
-        -- KPS MODE: 1 press per tick
+        -- KPS: 1 press per tick
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
-
     else
-        -- CPS MODE: multiple presses per tick
+        -- CPS: multiple presses per tick
         local cps = EngineState.TargetSpeed
         local presses = math.clamp(math.floor(cps / 60), 1, 50)
 
@@ -202,6 +199,7 @@ ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.TextSize = 14 * SCALE
 ModeBtn.Parent = Panel
 Round(ModeBtn, 8 * SCALE)
+
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(1, -20 * SCALE, 0, 6 * SCALE)
 SliderTrack.Position = UDim2.new(0, 10 * SCALE, 0, 175 * SCALE)
@@ -232,7 +230,6 @@ SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedLabel.Font = Enum.Font.Michroma
 SpeedLabel.TextSize = 14 * SCALE
 SpeedLabel.Parent = Panel
-
 local function UpdateUI()
     SpeedLabel.Text = EngineState.TargetSpeed .. " " .. EngineState.ModeSelection
     MacroBtn.Text = EngineState.IsRunning and "MACRO: ON" or "MACRO: OFF"
@@ -263,7 +260,7 @@ BindBtn.MouseButton1Click:Connect(function()
 end)
 
 UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end  -- ignore VIM input
+    if gp then return end
 
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown then
@@ -280,7 +277,6 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- MOBILE + PC SLIDER
 local dragging = false
 local dragInput = nil
 
@@ -300,7 +296,7 @@ SliderButton.InputEnded:Connect(function(input)
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if dragging and input == dragInput and input.UserInputType == Enum.UserInputType.MouseMovement then
         local pos = input.Position.X
         local base = SliderTrack.AbsolutePosition.X
         local size = SliderTrack.AbsoluteSize.X
@@ -311,7 +307,22 @@ UIS.InputChanged:Connect(function(input)
         EngineState.TargetSpeed = calculated
         SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
         SliderButton.Position = UDim2.new(fraction, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
+        SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
+    end
+end)
 
+UIS.TouchMoved:Connect(function(touch)
+    if dragging and dragInput and touch == dragInput then
+        local pos = touch.Position.X
+        local base = SliderTrack.AbsolutePosition.X
+        local size = SliderTrack.AbsoluteSize.X
+
+        local fraction = math.clamp((pos - base) / size, 0, 1)
+        local calculated = math.floor(1 + (fraction * 2499))
+
+        EngineState.TargetSpeed = calculated
+        SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
+        SliderButton.Position = UDim2.new(fraction, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
         SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
     end
 end)
