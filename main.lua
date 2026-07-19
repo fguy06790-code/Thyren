@@ -1,11 +1,11 @@
 -- =============================================================================
--- GRAPHITE PANEL (TEXTBOX SPEED INPUT + VIM F + CPS/KPS + MOBILE SAFE)
+-- GRAPHITE RECTANGLE UI (CLEAN, LOW-LAG, TEXTBOX SPEED INPUT, VIM F)
 -- =============================================================================
 
 pcall(function()
     local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
-    if pg and pg:FindFirstChild("GraphiteMinimalUI") then
-        pg.GraphiteMinimalUI:Destroy()
+    if pg and pg:FindFirstChild("GraphiteUI") then
+        pg.GraphiteUI:Destroy()
     end
 end)
 
@@ -28,7 +28,7 @@ local EngineState = {
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GraphiteMinimalUI"
+ScreenGui.Name = "GraphiteUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
@@ -136,88 +136,89 @@ local function ToggleMacro()
     if EngineState.IsRunning then StopMacro() else StartMacro() end
 end
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 260, 0, 210)
-Panel.Position = UDim2.new(0.5, -130, 0.5, -105)
-Panel.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+Panel.Size = UDim2.new(0, 420, 0, 300)
+Panel.Position = UDim2.new(0.5, -210, 0.5, -150)
+Panel.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 Panel.Active = true
 Panel.Draggable = true
 Panel.Parent = ScreenGui
-Round(Panel, 12)
+Round(Panel, 14)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 28)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "GRAPHITE PANEL"
-Title.TextColor3 = Color3.fromRGB(220, 220, 230)
+Title.Text = "GRAPHITE CONTROL PANEL"
+Title.TextColor3 = Color3.fromRGB(230, 230, 240)
 Title.Font = Enum.Font.Michroma
-Title.TextSize = 16
+Title.TextSize = 22
 Title.Parent = Panel
 
+-- LEFT COLUMN
 local MacroBtn = Instance.new("TextButton")
-MacroBtn.Size = UDim2.new(1, -20, 0, 28)
-MacroBtn.Position = UDim2.new(0, 10, 0, 35)
+MacroBtn.Size = UDim2.new(0, 180, 0, 40)
+MacroBtn.Position = UDim2.new(0, 20, 0, 60)
 MacroBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 MacroBtn.Text = "MACRO: OFF"
 MacroBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 MacroBtn.Font = Enum.Font.Michroma
-MacroBtn.TextSize = 14
+MacroBtn.TextSize = 18
 MacroBtn.Parent = Panel
-Round(MacroBtn, 8)
-
-local BindBtn = Instance.new("TextButton")
-BindBtn.Size = UDim2.new(1, -20, 0, 28)
-BindBtn.Position = UDim2.new(0, 10, 0, 70)
-BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
-BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
-BindBtn.Font = Enum.Font.Michroma
-BindBtn.TextSize = 14
-BindBtn.Parent = Panel
-Round(BindBtn, 8)
+Round(MacroBtn, 10)
 
 local ParryBtn = Instance.new("TextButton")
-ParryBtn.Size = UDim2.new(1, -20, 0, 28)
-ParryBtn.Position = UDim2.new(0, 10, 0, 105)
+ParryBtn.Size = UDim2.new(0, 180, 0, 40)
+ParryBtn.Position = UDim2.new(0, 20, 0, 110)
 ParryBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ParryBtn.Text = "AUTO PARRY: OFF"
 ParryBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ParryBtn.Font = Enum.Font.Michroma
-ParryBtn.TextSize = 14
+ParryBtn.TextSize = 18
 ParryBtn.Parent = Panel
-Round(ParryBtn, 8)
+Round(ParryBtn, 10)
 
 local ModeBtn = Instance.new("TextButton")
-ModeBtn.Size = UDim2.new(1, -20, 0, 28)
-ModeBtn.Position = UDim2.new(0, 10, 0, 140)
+ModeBtn.Size = UDim2.new(0, 180, 0, 40)
+ModeBtn.Position = UDim2.new(0, 20, 0, 160)
 ModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ModeBtn.Font = Enum.Font.Michroma
-ModeBtn.TextSize = 14
+ModeBtn.TextSize = 18
 ModeBtn.Parent = Panel
-Round(ModeBtn, 8)
+Round(ModeBtn, 10)
 
--- TEXTBOX SPEED INPUT
+local BindBtn = Instance.new("TextButton")
+BindBtn.Size = UDim2.new(0, 180, 0, 40)
+BindBtn.Position = UDim2.new(0, 20, 0, 210)
+BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
+BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
+BindBtn.Font = Enum.Font.Michroma
+BindBtn.TextSize = 18
+BindBtn.Parent = Panel
+Round(BindBtn, 10)
+
+-- RIGHT COLUMN (TEXTBOX SPEED INPUT)
 local SpeedBox = Instance.new("TextBox")
-SpeedBox.Size = UDim2.new(1, -20, 0, 28)
-SpeedBox.Position = UDim2.new(0, 10, 0, 175)
+SpeedBox.Size = UDim2.new(0, 180, 0, 40)
+SpeedBox.Position = UDim2.new(0, 220, 0, 60)
 SpeedBox.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SpeedBox.Text = "10"
 SpeedBox.PlaceholderText = "1 - 2500"
 SpeedBox.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedBox.Font = Enum.Font.Michroma
-SpeedBox.TextSize = 14
+SpeedBox.TextSize = 18
 SpeedBox.Parent = Panel
-Round(SpeedBox, 8)
+Round(SpeedBox, 10)
 
 local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
-SpeedLabel.Position = UDim2.new(0, 0, 0, 205)
+SpeedLabel.Size = UDim2.new(0, 180, 0, 40)
+SpeedLabel.Position = UDim2.new(0, 220, 0, 110)
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Text = "10 KPS"
 SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedLabel.Font = Enum.Font.Michroma
-SpeedLabel.TextSize = 14
+SpeedLabel.TextSize = 18
 SpeedLabel.Parent = Panel
 local function UpdateUI()
     SpeedLabel.Text = EngineState.TargetSpeed .. " " .. EngineState.ModeSelection
@@ -266,7 +267,6 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- TEXTBOX SPEED INPUT
 SpeedBox.FocusLost:Connect(function()
     local num = tonumber(SpeedBox.Text)
     if not num then return end
