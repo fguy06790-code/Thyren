@@ -44,8 +44,8 @@ local function ApplyRadius(obj, r)
     c.Parent = obj
 end
 local function fireParry()
-    VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, true, nil)
-    VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, true, nil)
+    VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, false, nil)
+    VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, false, nil)
 end
 
 local function FindBall()
@@ -105,7 +105,7 @@ local function StopParry()
         EngineState.ParryConnection = nil
     end
 end
--- UNIVERSAL MACRO ENGINE (ALWAYS SPAMS F)
+-- UNIVERSAL MACRO ENGINE (SPAMS F USING VIM)
 local MacroConnection = nil
 local lastFire = 0
 
@@ -115,19 +115,12 @@ local function RunMacro()
     local speed = EngineState.TargetSpeed
     local key = EngineState.SpamKey  -- ALWAYS F
 
-    -- High-speed mode
-    if speed >= 60 then
-        VirtualInputManager:SendKeyEvent(true, key, true, nil)
-        VirtualInputManager:SendKeyEvent(false, key, true, nil)
-        return
-    end
-
-    -- Normal mode
     local now = os.clock()
     if now - lastFire >= 1 / speed then
         lastFire = now
-        VirtualInputManager:SendKeyEvent(true, key, true, nil)
-        VirtualInputManager:SendKeyEvent(false, key, true, nil)
+
+        VirtualInputManager:SendKeyEvent(true, key, false, nil)
+        VirtualInputManager:SendKeyEvent(false, key, false, nil)
     end
 end
 
