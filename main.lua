@@ -1,5 +1,5 @@
 -- =============================================================================
--- GRAPHITE MINIMAL PANEL (FULLY OPTIMIZED)
+-- GRAPHITE PANEL (FULLY OPTIMIZED + ORIGINAL SIZE + MOBILE SLIDER)
 -- =============================================================================
 
 -- DELETE PREVIOUS INSTANCES
@@ -18,17 +18,17 @@ local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 local Stats = game:GetService("Stats")
 
--- ENGINE STATE (OPTIMIZED)
+-- ENGINE STATE
 local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
-    ToggleKey = Enum.KeyCode.G,   -- MACRO TOGGLE KEY
-    SpamKey = Enum.KeyCode.F,     -- ALWAYS SPAM F
+    ModeSelection = "KPS",   -- KPS or CPS
+    ToggleKey = Enum.KeyCode.G,
+    SpamKey = Enum.KeyCode.F,
     IsBinding = false,
     AutoParryActive = false
 }
 
--- UI ROOT
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "GraphiteMinimalUI"
 ScreenGui.ResetOnSpawn = false
@@ -39,6 +39,8 @@ local function Round(obj, r)
     c.CornerRadius = UDim.new(0, r)
     c.Parent = obj
 end
+
+local SCALE = 1
 local function FireParry()
     VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
     VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
@@ -103,12 +105,23 @@ local function RunMacro()
     if not EngineState.IsRunning then return end
 
     local now = os.clock()
-    if now - lastFire >= 1 / EngineState.TargetSpeed then
-        lastFire = now
+    if now - lastFire < 1/60 then return end  -- 60Hz tick
+    lastFire = now
 
-        -- TRUE VIM F KEY SPAM (OPTIMIZED)
+    if EngineState.ModeSelection == "KPS" then
+        -- KPS MODE: 1 press per tick
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+
+    else
+        -- CPS MODE: multiple presses per tick
+        local cps = EngineState.TargetSpeed
+        local presses = math.clamp(math.floor(cps / 60), 1, 50)
+
+        for i = 1, presses do
+            VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
+            VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+        end
     end
 end
 
@@ -129,134 +142,128 @@ local function ToggleMacro()
     if EngineState.IsRunning then StopMacro() else StartMacro() end
 end
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 260, 0, 210)
-Panel.Position = UDim2.new(0.5, -130, 0.5, -105)
+Panel.Size = UDim2.new(0, 260 * SCALE, 0, 210 * SCALE)
+Panel.Position = UDim2.new(0.5, -(260 * SCALE)/2, 0.5, -(210 * SCALE)/2)
 Panel.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 Panel.Active = true
 Panel.Draggable = true
 Panel.Parent = ScreenGui
-Round(Panel, 8)
+Round(Panel, 12 * SCALE)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 28)
+Title.Size = UDim2.new(1, 0, 0, 28 * SCALE)
 Title.BackgroundTransparency = 1
 Title.Text = "GRAPHITE PANEL"
 Title.TextColor3 = Color3.fromRGB(220, 220, 230)
 Title.Font = Enum.Font.Michroma
-Title.TextSize = 16
+Title.TextSize = 16 * SCALE
 Title.Parent = Panel
 
 local MacroBtn = Instance.new("TextButton")
-MacroBtn.Size = UDim2.new(1, -20, 0, 28)
-MacroBtn.Position = UDim2.new(0, 10, 0, 35)
+MacroBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
+MacroBtn.Position = UDim2.new(0, 10 * SCALE, 0, 35 * SCALE)
 MacroBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 MacroBtn.Text = "MACRO: OFF"
 MacroBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 MacroBtn.Font = Enum.Font.Michroma
-MacroBtn.TextSize = 14
+MacroBtn.TextSize = 14 * SCALE
 MacroBtn.Parent = Panel
-Round(MacroBtn, 6)
+Round(MacroBtn, 8 * SCALE)
 
 local BindBtn = Instance.new("TextButton")
-BindBtn.Size = UDim2.new(1, -20, 0, 28)
-BindBtn.Position = UDim2.new(0, 10, 0, 70)
+BindBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
+BindBtn.Position = UDim2.new(0, 10 * SCALE, 0, 70 * SCALE)
 BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
 BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 BindBtn.Font = Enum.Font.Michroma
-BindBtn.TextSize = 14
+BindBtn.TextSize = 14 * SCALE
 BindBtn.Parent = Panel
-Round(BindBtn, 6)
+Round(BindBtn, 8 * SCALE)
 
 local ParryBtn = Instance.new("TextButton")
-ParryBtn.Size = UDim2.new(1, -20, 0, 28)
-ParryBtn.Position = UDim2.new(0, 10, 0, 105)
+ParryBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
+ParryBtn.Position = UDim2.new(0, 10 * SCALE, 0, 105 * SCALE)
 ParryBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ParryBtn.Text = "AUTO PARRY: OFF"
 ParryBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ParryBtn.Font = Enum.Font.Michroma
-ParryBtn.TextSize = 14
+ParryBtn.TextSize = 14 * SCALE
 ParryBtn.Parent = Panel
-Round(ParryBtn, 6)
+Round(ParryBtn, 8 * SCALE)
 
 local ModeBtn = Instance.new("TextButton")
-ModeBtn.Size = UDim2.new(1, -20, 0, 28)
-ModeBtn.Position = UDim2.new(0, 10, 0, 140)
+ModeBtn.Size = UDim2.new(1, -20 * SCALE, 0, 28 * SCALE)
+ModeBtn.Position = UDim2.new(0, 10 * SCALE, 0, 140 * SCALE)
 ModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ModeBtn.Text = "MODE: KPS"
 ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ModeBtn.Font = Enum.Font.Michroma
-ModeBtn.TextSize = 14
+ModeBtn.TextSize = 14 * SCALE
 ModeBtn.Parent = Panel
-Round(ModeBtn, 6)
+Round(ModeBtn, 8 * SCALE)
 local SliderTrack = Instance.new("Frame")
-SliderTrack.Size = UDim2.new(1, -20, 0, 6)
-SliderTrack.Position = UDim2.new(0, 10, 0, 175)
+SliderTrack.Size = UDim2.new(1, -20 * SCALE, 0, 6 * SCALE)
+SliderTrack.Position = UDim2.new(0, 10 * SCALE, 0, 175 * SCALE)
 SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SliderTrack.Parent = Panel
-Round(SliderTrack, 3)
+Round(SliderTrack, 4 * SCALE)
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
 SliderFill.BackgroundColor3 = Color3.fromRGB(180, 180, 200)
 SliderFill.Parent = SliderTrack
-Round(SliderFill, 3)
+Round(SliderFill, 4 * SCALE)
 
 local SliderButton = Instance.new("TextButton")
-SliderButton.Size = UDim2.new(0, 14, 0, 14)
-SliderButton.Position = UDim2.new(0.01, -7, 0.5, -7)
+SliderButton.Size = UDim2.new(0, 14 * SCALE, 0, 14 * SCALE)
+SliderButton.Position = UDim2.new(0.01, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
 SliderButton.BackgroundColor3 = Color3.fromRGB(220, 220, 230)
 SliderButton.Text = ""
 SliderButton.Parent = SliderTrack
-Round(SliderButton, 7)
+Round(SliderButton, 7 * SCALE)
 
 local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
-SpeedLabel.Position = UDim2.new(0, 0, 0, 190)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 20 * SCALE)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 190 * SCALE)
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Text = "10 KPS"
 SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedLabel.Font = Enum.Font.Michroma
-SpeedLabel.TextSize = 14
+SpeedLabel.TextSize = 14 * SCALE
 SpeedLabel.Parent = Panel
 
--- UI LOGIC
 local function UpdateUI()
-    SpeedLabel.Text = EngineState.TargetSpeed .. " KPS"
+    SpeedLabel.Text = EngineState.TargetSpeed .. " " .. EngineState.ModeSelection
     MacroBtn.Text = EngineState.IsRunning and "MACRO: ON" or "MACRO: OFF"
     ParryBtn.Text = EngineState.AutoParryActive and "AUTO PARRY: ON" or "AUTO PARRY: OFF"
     ModeBtn.Text = "MODE: " .. EngineState.ModeSelection
     BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
 end
 
--- MACRO BUTTON
 MacroBtn.MouseButton1Click:Connect(function()
     ToggleMacro()
     UpdateUI()
 end)
 
--- AUTO PARRY BUTTON
 ParryBtn.MouseButton1Click:Connect(function()
     EngineState.AutoParryActive = not EngineState.AutoParryActive
     if EngineState.AutoParryActive then StartParry() else StopParry() end
     UpdateUI()
 end)
 
--- MODE BUTTON
 ModeBtn.MouseButton1Click:Connect(function()
     EngineState.ModeSelection = (EngineState.ModeSelection == "KPS") and "CPS" or "KPS"
     UpdateUI()
 end)
 
--- KEYBIND BUTTON
 BindBtn.MouseButton1Click:Connect(function()
     EngineState.IsBinding = true
     BindBtn.Text = "PRESS ANY KEY..."
 end)
 
--- IGNORE VIM INPUT (CRITICAL FIX)
 UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end  -- ignore virtual input
+    if gp then return end  -- ignore VIM input
 
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown then
@@ -273,15 +280,27 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- SLIDER DRAGGING
+-- MOBILE + PC SLIDER
 local dragging = false
+local dragInput = nil
 
 SliderButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragInput = input
+    end
+end)
+
+SliderButton.InputEnded:Connect(function(input)
+    if input == dragInput then
+        dragging = false
+        dragInput = nil
+    end
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if input == dragInput and dragging then
         local pos = input.Position.X
         local base = SliderTrack.AbsolutePosition.X
         local size = SliderTrack.AbsoluteSize.X
@@ -291,13 +310,10 @@ UIS.InputChanged:Connect(function(input)
 
         EngineState.TargetSpeed = calculated
         SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
-        SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
-        SpeedLabel.Text = calculated .. " KPS"
-    end
-end)
+        SliderButton.Position = UDim2.new(fraction, -(14 * SCALE)/2, 0.5, -(14 * SCALE)/2)
 
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+        SpeedLabel.Text = calculated .. " " .. EngineState.ModeSelection
+    end
 end)
 
 UpdateUI()
