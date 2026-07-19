@@ -1,11 +1,11 @@
 -- =============================================================================
--- GRAPHITE RECTANGLE UI (CLEAN, LOW-LAG, TEXTBOX SPEED INPUT, VIM F)
+-- THYREN CONTROL PANEL (PING-SAFE + COLLAPSIBLE + CPS/KPS + VIM F)
 -- =============================================================================
 
 pcall(function()
     local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
-    if pg and pg:FindFirstChild("GraphiteUI") then
-        pg.GraphiteUI:Destroy()
+    if pg and pg:FindFirstChild("ThyrenUI") then
+        pg.ThyrenUI:Destroy()
     end
 end)
 
@@ -15,20 +15,20 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local VIM = game:GetService("VirtualInputManager")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
-local Stats = game:GetService("Stats")
 
 local EngineState = {
     IsRunning = false,
-    TargetSpeed = 10,
+    TargetSpeed = 10, -- now supports up to 5000 safely
     ModeSelection = "KPS",
     ToggleKey = Enum.KeyCode.G,
     SpamKey = Enum.KeyCode.F,
     IsBinding = false,
-    AutoParryActive = false
+    AutoParryActive = false,
+    Collapsed = false
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GraphiteUI"
+ScreenGui.Name = "ThyrenUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
@@ -95,33 +95,47 @@ local function StopParry()
     end
 end
 local MacroConnection = nil
-local lastFire = 0
+local clickAccumulator = 0
 
-local function RunMacro()
+-- Ping-safe limiter
+local MAX_EVENTS_PER_HEARTBEAT = 40  -- prevents ping spikes
+
+local function RunMacro(dt)
     if not EngineState.IsRunning then return end
 
-    local now = os.clock()
-    if now - lastFire < 1/60 then return end
-    lastFire = now
-
+    -- KPS MODE (1 click per tick)
     if EngineState.ModeSelection == "KPS" then
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+        return
+    end
 
-    else
-        local cps = EngineState.TargetSpeed
-        local presses = math.clamp(math.floor(cps / 60), 1, 50)
+    -- CPS MODE (time-based accurate clicking)
+    local cps = EngineState.TargetSpeed
+    local clicksPerSecond = cps
 
-        for i = 1, presses do
-            VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
-            VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+    clickAccumulator += dt
+    local expectedClicks = clicksPerSecond * clickAccumulator
+
+    local eventsThisHeartbeat = 0
+
+    while expectedClicks >= 1 do
+        if eventsThisHeartbeat >= MAX_EVENTS_PER_HEARTBEAT then
+            break -- prevents ping explosion
         end
+
+        VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
+        VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+
+        eventsThisHeartbeat += 1
+        expectedClicks -= 1
+        clickAccumulator -= (1 / clicksPerSecond)
     end
 end
 
 local function StartMacro()
     EngineState.IsRunning = true
-    lastFire = os.clock()
+    clickAccumulator = 0
 
     if MacroConnection then MacroConnection:Disconnect() end
     MacroConnection = RS.Heartbeat:Connect(RunMacro)
@@ -144,10 +158,22 @@ Panel.Draggable = true
 Panel.Parent = ScreenGui
 Round(Panel, 14)
 
+local CollapseBtn = Instance.new("TextButton")
+CollapseBtn.Size = UDim2.new(0, 40, 0, 40)
+CollapseBtn.Position = UDim2.new(1, -50, 0, 0)
+CollapseBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+CollapseBtn.Text = "-"
+CollapseBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
+CollapseBtn.Font = Enum.Font.Michroma
+CollapseBtn.TextSize = 24
+CollapseBtn.Parent = Panel
+Round(CollapseBtn, 10)
+
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Size = UDim2.new(1, -50, 0, 40)
+Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "GRAPHITE CONTROL PANEL"
+Title.Text = "THYREN CONTROL PANEL"
 Title.TextColor3 = Color3.fromRGB(230, 230, 240)
 Title.Font = Enum.Font.Michroma
 Title.TextSize = 22
@@ -198,13 +224,13 @@ BindBtn.TextSize = 18
 BindBtn.Parent = Panel
 Round(BindBtn, 10)
 
--- RIGHT COLUMN (TEXTBOX SPEED INPUT)
+-- RIGHT COLUMN
 local SpeedBox = Instance.new("TextBox")
 SpeedBox.Size = UDim2.new(0, 180, 0, 40)
 SpeedBox.Position = UDim2.new(0, 220, 0, 60)
 SpeedBox.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SpeedBox.Text = "10"
-SpeedBox.PlaceholderText = "1 - 2500"
+SpeedBox.PlaceholderText = "1 - 5000"
 SpeedBox.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedBox.Font = Enum.Font.Michroma
 SpeedBox.TextSize = 18
@@ -271,11 +297,23 @@ SpeedBox.FocusLost:Connect(function()
     local num = tonumber(SpeedBox.Text)
     if not num then return end
 
-    num = math.clamp(num, 1, 2500)
+    num = math.clamp(num, 1, 5000)
     EngineState.TargetSpeed = num
     SpeedBox.Text = tostring(num)
 
     UpdateUI()
+end)
+
+CollapseBtn.MouseButton1Click:Connect(function()
+    EngineState.Collapsed = not EngineState.Collapsed
+
+    if EngineState.Collapsed then
+        Panel:TweenSize(UDim2.new(0, 420, 0, 50), "Out", "Quad", 0.25, true)
+        CollapseBtn.Text = "+"
+    else
+        Panel:TweenSize(UDim2.new(0, 420, 0, 300), "Out", "Quad", 0.25, true)
+        CollapseBtn.Text = "-"
+    end
 end)
 
 UpdateUI()
