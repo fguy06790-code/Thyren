@@ -1,5 +1,5 @@
 -- =============================================================================
--- THYREN CONTROL PANEL (10,000 CPS/KPS + ULTRA-NEAT UI + COLLAPSIBLE + VIM F)
+-- THYREN CONTROL PANEL (10,000 CPS/KPS + ULTRA-NEAT + FULL COLLAPSE HIDE)
 -- =============================================================================
 
 pcall(function()
@@ -18,7 +18,7 @@ local RS = game:GetService("RunService")
 
 local EngineState = {
     IsRunning = false,
-    TargetSpeed = 10, -- supports up to 10,000
+    TargetSpeed = 10,
     ModeSelection = "KPS",
     ToggleKey = Enum.KeyCode.G,
     SpamKey = Enum.KeyCode.F,
@@ -97,46 +97,38 @@ end
 local MacroConnection = nil
 local clickAccumulator = 0
 
--- Ping-safe limiter
-local MAX_EVENTS_PER_HEARTBEAT = 60
+local MAX_EVENTS_PER_HEARTBEAT = 60 -- ping-safe
 
 local function RunMacro(dt)
     if not EngineState.IsRunning then return end
 
-    -- KPS MODE
     if EngineState.ModeSelection == "KPS" then
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
         return
     end
 
-    -- CPS MODE
     local cps = EngineState.TargetSpeed
-    local clicksPerSecond = cps
-
     clickAccumulator += dt
-    local expectedClicks = clicksPerSecond * clickAccumulator
+    local expectedClicks = cps * clickAccumulator
 
     local eventsThisHeartbeat = 0
 
     while expectedClicks >= 1 do
-        if eventsThisHeartbeat >= MAX_EVENTS_PER_HEARTBEAT then
-            break
-        end
+        if eventsThisHeartbeat >= MAX_EVENTS_PER_HEARTBEAT then break end
 
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
 
         eventsThisHeartbeat += 1
         expectedClicks -= 1
-        clickAccumulator -= (1 / clicksPerSecond)
+        clickAccumulator -= (1 / cps)
     end
 end
 
 local function StartMacro()
     EngineState.IsRunning = true
     clickAccumulator = 0
-
     if MacroConnection then MacroConnection:Disconnect() end
     MacroConnection = RS.Heartbeat:Connect(RunMacro)
 end
@@ -185,14 +177,12 @@ CollapseBtn.TextSize = 24
 CollapseBtn.Parent = Header
 Round(CollapseBtn, 10)
 
--- CONTENT AREA
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1, -40, 1, -70)
 Content.Position = UDim2.new(0, 20, 0, 60)
 Content.BackgroundTransparency = 1
 Content.Parent = Panel
 
--- GRID LAYOUT (super neat)
 local Grid = Instance.new("UIGridLayout")
 Grid.CellSize = UDim2.new(0, 200, 0, 50)
 Grid.CellPadding = UDim2.new(0, 20, 0, 20)
@@ -201,7 +191,6 @@ Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Grid.VerticalAlignment = Enum.VerticalAlignment.Top
 Grid.Parent = Content
 
--- BUTTONS
 local MacroBtn = Instance.new("TextButton")
 MacroBtn.Text = "MACRO: OFF"
 MacroBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
@@ -313,14 +302,25 @@ SpeedBox.FocusLost:Connect(function()
     UpdateUI()
 end)
 
+-- FULL COLLAPSE HIDE/SHOW
+local function SetContentVisible(state)
+    for _, child in ipairs(Content:GetChildren()) do
+        if child:IsA("GuiObject") then
+            child.Visible = state
+        end
+    end
+end
+
 CollapseBtn.MouseButton1Click:Connect(function()
     EngineState.Collapsed = not EngineState.Collapsed
 
     if EngineState.Collapsed then
+        SetContentVisible(false)
         Panel:TweenSize(UDim2.new(0, 460, 0, 60), "Out", "Quad", 0.25, true)
         CollapseBtn.Text = "+"
     else
         Panel:TweenSize(UDim2.new(0, 460, 0, 320), "Out", "Quad", 0.25, true)
+        SetContentVisible(true)
         CollapseBtn.Text = "-"
     end
 end)
