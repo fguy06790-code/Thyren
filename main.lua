@@ -1,5 +1,5 @@
 -- =============================================================================
--- THYREN CONTROL PANEL (PING-SAFE + COLLAPSIBLE + CPS/KPS + VIM F)
+-- THYREN CONTROL PANEL (10,000 CPS/KPS + ULTRA-NEAT UI + COLLAPSIBLE + VIM F)
 -- =============================================================================
 
 pcall(function()
@@ -18,7 +18,7 @@ local RS = game:GetService("RunService")
 
 local EngineState = {
     IsRunning = false,
-    TargetSpeed = 10, -- now supports up to 5000 safely
+    TargetSpeed = 10, -- supports up to 10,000
     ModeSelection = "KPS",
     ToggleKey = Enum.KeyCode.G,
     SpamKey = Enum.KeyCode.F,
@@ -98,19 +98,19 @@ local MacroConnection = nil
 local clickAccumulator = 0
 
 -- Ping-safe limiter
-local MAX_EVENTS_PER_HEARTBEAT = 40  -- prevents ping spikes
+local MAX_EVENTS_PER_HEARTBEAT = 60
 
 local function RunMacro(dt)
     if not EngineState.IsRunning then return end
 
-    -- KPS MODE (1 click per tick)
+    -- KPS MODE
     if EngineState.ModeSelection == "KPS" then
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
         VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
         return
     end
 
-    -- CPS MODE (time-based accurate clicking)
+    -- CPS MODE
     local cps = EngineState.TargetSpeed
     local clicksPerSecond = cps
 
@@ -121,7 +121,7 @@ local function RunMacro(dt)
 
     while expectedClicks >= 1 do
         if eventsThisHeartbeat >= MAX_EVENTS_PER_HEARTBEAT then
-            break -- prevents ping explosion
+            break
         end
 
         VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
@@ -150,102 +150,111 @@ local function ToggleMacro()
     if EngineState.IsRunning then StopMacro() else StartMacro() end
 end
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 420, 0, 300)
-Panel.Position = UDim2.new(0.5, -210, 0.5, -150)
-Panel.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+Panel.Size = UDim2.new(0, 460, 0, 320)
+Panel.Position = UDim2.new(0.5, -230, 0.5, -160)
+Panel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 Panel.Active = true
 Panel.Draggable = true
 Panel.Parent = ScreenGui
-Round(Panel, 14)
+Round(Panel, 16)
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+Header.Parent = Panel
+Round(Header, 16)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 20, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "THYREN CONTROL PANEL"
+Title.TextColor3 = Color3.fromRGB(235, 235, 245)
+Title.Font = Enum.Font.Michroma
+Title.TextSize = 22
+Title.Parent = Header
 
 local CollapseBtn = Instance.new("TextButton")
 CollapseBtn.Size = UDim2.new(0, 40, 0, 40)
-CollapseBtn.Position = UDim2.new(1, -50, 0, 0)
+CollapseBtn.Position = UDim2.new(1, -50, 0, 5)
 CollapseBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 CollapseBtn.Text = "-"
 CollapseBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 CollapseBtn.Font = Enum.Font.Michroma
 CollapseBtn.TextSize = 24
-CollapseBtn.Parent = Panel
+CollapseBtn.Parent = Header
 Round(CollapseBtn, 10)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -50, 0, 40)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "THYREN CONTROL PANEL"
-Title.TextColor3 = Color3.fromRGB(230, 230, 240)
-Title.Font = Enum.Font.Michroma
-Title.TextSize = 22
-Title.Parent = Panel
+-- CONTENT AREA
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -40, 1, -70)
+Content.Position = UDim2.new(0, 20, 0, 60)
+Content.BackgroundTransparency = 1
+Content.Parent = Panel
 
--- LEFT COLUMN
+-- GRID LAYOUT (super neat)
+local Grid = Instance.new("UIGridLayout")
+Grid.CellSize = UDim2.new(0, 200, 0, 50)
+Grid.CellPadding = UDim2.new(0, 20, 0, 20)
+Grid.FillDirection = Enum.FillDirection.Horizontal
+Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Grid.VerticalAlignment = Enum.VerticalAlignment.Top
+Grid.Parent = Content
+
+-- BUTTONS
 local MacroBtn = Instance.new("TextButton")
-MacroBtn.Size = UDim2.new(0, 180, 0, 40)
-MacroBtn.Position = UDim2.new(0, 20, 0, 60)
-MacroBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 MacroBtn.Text = "MACRO: OFF"
+MacroBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 MacroBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 MacroBtn.Font = Enum.Font.Michroma
 MacroBtn.TextSize = 18
-MacroBtn.Parent = Panel
+MacroBtn.Parent = Content
 Round(MacroBtn, 10)
 
 local ParryBtn = Instance.new("TextButton")
-ParryBtn.Size = UDim2.new(0, 180, 0, 40)
-ParryBtn.Position = UDim2.new(0, 20, 0, 110)
-ParryBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ParryBtn.Text = "AUTO PARRY: OFF"
+ParryBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 ParryBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ParryBtn.Font = Enum.Font.Michroma
 ParryBtn.TextSize = 18
-ParryBtn.Parent = Panel
+ParryBtn.Parent = Content
 Round(ParryBtn, 10)
 
 local ModeBtn = Instance.new("TextButton")
-ModeBtn.Size = UDim2.new(0, 180, 0, 40)
-ModeBtn.Position = UDim2.new(0, 20, 0, 160)
-ModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 ModeBtn.Text = "MODE: KPS"
+ModeBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.TextSize = 18
-ModeBtn.Parent = Panel
+ModeBtn.Parent = Content
 Round(ModeBtn, 10)
 
 local BindBtn = Instance.new("TextButton")
-BindBtn.Size = UDim2.new(0, 180, 0, 40)
-BindBtn.Position = UDim2.new(0, 20, 0, 210)
-BindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 BindBtn.Text = "BIND KEY: [" .. EngineState.ToggleKey.Name .. "]"
+BindBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 BindBtn.Font = Enum.Font.Michroma
 BindBtn.TextSize = 18
-BindBtn.Parent = Panel
+BindBtn.Parent = Content
 Round(BindBtn, 10)
 
--- RIGHT COLUMN
 local SpeedBox = Instance.new("TextBox")
-SpeedBox.Size = UDim2.new(0, 180, 0, 40)
-SpeedBox.Position = UDim2.new(0, 220, 0, 60)
-SpeedBox.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SpeedBox.Text = "10"
-SpeedBox.PlaceholderText = "1 - 5000"
+SpeedBox.PlaceholderText = "1 - 10000"
+SpeedBox.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SpeedBox.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedBox.Font = Enum.Font.Michroma
 SpeedBox.TextSize = 18
-SpeedBox.Parent = Panel
+SpeedBox.Parent = Content
 Round(SpeedBox, 10)
 
 local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(0, 180, 0, 40)
-SpeedLabel.Position = UDim2.new(0, 220, 0, 110)
-SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Text = "10 KPS"
+SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 SpeedLabel.Font = Enum.Font.Michroma
 SpeedLabel.TextSize = 18
-SpeedLabel.Parent = Panel
+SpeedLabel.Parent = Content
 local function UpdateUI()
     SpeedLabel.Text = EngineState.TargetSpeed .. " " .. EngineState.ModeSelection
     MacroBtn.Text = EngineState.IsRunning and "MACRO: ON" or "MACRO: OFF"
@@ -297,7 +306,7 @@ SpeedBox.FocusLost:Connect(function()
     local num = tonumber(SpeedBox.Text)
     if not num then return end
 
-    num = math.clamp(num, 1, 5000)
+    num = math.clamp(num, 1, 10000)
     EngineState.TargetSpeed = num
     SpeedBox.Text = tostring(num)
 
@@ -308,10 +317,10 @@ CollapseBtn.MouseButton1Click:Connect(function()
     EngineState.Collapsed = not EngineState.Collapsed
 
     if EngineState.Collapsed then
-        Panel:TweenSize(UDim2.new(0, 420, 0, 50), "Out", "Quad", 0.25, true)
+        Panel:TweenSize(UDim2.new(0, 460, 0, 60), "Out", "Quad", 0.25, true)
         CollapseBtn.Text = "+"
     else
-        Panel:TweenSize(UDim2.new(0, 420, 0, 300), "Out", "Quad", 0.25, true)
+        Panel:TweenSize(UDim2.new(0, 460, 0, 320), "Out", "Quad", 0.25, true)
         CollapseBtn.Text = "-"
     end
 end)
