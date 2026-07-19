@@ -1,5 +1,5 @@
 -- =============================================================================
--- GRAPHITE MINIMAL PANEL (SUPER LAG-EFFICIENT)
+-- GRAPHITE MINIMAL PANEL (FULLY OPTIMIZED)
 -- =============================================================================
 
 -- DELETE PREVIOUS INSTANCES
@@ -13,23 +13,19 @@ end)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local StatsService = game:GetService("Stats")
+local VIM = game:GetService("VirtualInputManager")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local Stats = game:GetService("Stats")
 
--- ENGINE STATE
+-- ENGINE STATE (OPTIMIZED)
 local EngineState = {
     IsRunning = false,
     TargetSpeed = 10,
-    ModeSelection = "KPS",
-
     ToggleKey = Enum.KeyCode.G,   -- MACRO TOGGLE KEY
     SpamKey = Enum.KeyCode.F,     -- ALWAYS SPAM F
-
     IsBinding = false,
-    AutoParryActive = false,
-    LowEndMode = false
+    AutoParryActive = false
 }
 
 -- UI ROOT
@@ -38,62 +34,57 @@ ScreenGui.Name = "GraphiteMinimalUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
-local function ApplyRadius(obj, r)
+local function Round(obj, r)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r)
     c.Parent = obj
 end
-local function fireParry()
-    VirtualInputManager:SendKeyEvent(true, EngineState.SpamKey, false, nil)
-    VirtualInputManager:SendKeyEvent(false, EngineState.SpamKey, false, nil)
+local function FireParry()
+    VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
+    VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
 end
 
-local function FindBall()
+local function GetBall()
     local folder = workspace:FindFirstChild("Balls") or workspace:FindFirstChild("TrainingBalls")
-    if folder then
-        for _, ball in ipairs(folder:GetChildren()) do
-            if ball:GetAttribute("target") == LocalPlayer.Name then
-                return ball
-            end
+    if not folder then return nil end
+
+    for _, ball in ipairs(folder:GetChildren()) do
+        if ball:GetAttribute("target") == LocalPlayer.Name then
+            return ball
         end
     end
     return nil
 end
 
-local AntiCurve = false
 local ParryDist = 8
-local parried_balls = {}
+local parried = {}
 
 local function StartParry()
     if EngineState.ParryConnection then EngineState.ParryConnection:Disconnect() end
 
-    EngineState.ParryConnection = RunService.PreSimulation:Connect(function()
+    EngineState.ParryConnection = RS.PreSimulation:Connect(function()
         if not EngineState.AutoParryActive then return end
 
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
 
-        local ball = FindBall()
+        local ball = GetBall()
         if not ball then return end
+
+        local id = ball:GetDebugId()
+        if parried[id] then return end
 
         local dist = (ball.Position - hrp.Position).Magnitude
         local speed = ball.AssemblyLinearVelocity.Magnitude
 
-        local Ping = StatsService.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
-
-        local id = ball:GetDebugId()
-        if parried_balls[id] then return end
-
-        local shouldParry = dist <= ParryDist and speed > 0.5
-
-        if shouldParry then
-            fireParry()
-            parried_balls[id] = true
+        if dist <= ParryDist and speed > 0.5 then
+            FireParry()
+            parried[id] = true
 
             task.spawn(function()
                 ball:GetAttributeChangedSignal("target"):Wait()
-                parried_balls[id] = nil
+                parried[id] = nil
             end)
         end
     end)
@@ -105,22 +96,19 @@ local function StopParry()
         EngineState.ParryConnection = nil
     end
 end
--- UNIVERSAL MACRO ENGINE (SPAMS F USING VIM)
 local MacroConnection = nil
 local lastFire = 0
 
 local function RunMacro()
     if not EngineState.IsRunning then return end
 
-    local speed = EngineState.TargetSpeed
-    local key = EngineState.SpamKey  -- ALWAYS F
-
     local now = os.clock()
-    if now - lastFire >= 1 / speed then
+    if now - lastFire >= 1 / EngineState.TargetSpeed then
         lastFire = now
 
-        VirtualInputManager:SendKeyEvent(true, key, false, nil)
-        VirtualInputManager:SendKeyEvent(false, key, false, nil)
+        -- TRUE VIM F KEY SPAM (OPTIMIZED)
+        VIM:SendKeyEvent(true, EngineState.SpamKey, false, nil)
+        VIM:SendKeyEvent(false, EngineState.SpamKey, false, nil)
     end
 end
 
@@ -129,7 +117,7 @@ local function StartMacro()
     lastFire = os.clock()
 
     if MacroConnection then MacroConnection:Disconnect() end
-    MacroConnection = RunService.Heartbeat:Connect(RunMacro)
+    MacroConnection = RS.Heartbeat:Connect(RunMacro)
 end
 
 local function StopMacro()
@@ -147,7 +135,7 @@ Panel.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 Panel.Active = true
 Panel.Draggable = true
 Panel.Parent = ScreenGui
-ApplyRadius(Panel, 8)
+Round(Panel, 8)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 28)
@@ -167,7 +155,7 @@ MacroBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 MacroBtn.Font = Enum.Font.Michroma
 MacroBtn.TextSize = 14
 MacroBtn.Parent = Panel
-ApplyRadius(MacroBtn, 6)
+Round(MacroBtn, 6)
 
 local BindBtn = Instance.new("TextButton")
 BindBtn.Size = UDim2.new(1, -20, 0, 28)
@@ -178,7 +166,7 @@ BindBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 BindBtn.Font = Enum.Font.Michroma
 BindBtn.TextSize = 14
 BindBtn.Parent = Panel
-ApplyRadius(BindBtn, 6)
+Round(BindBtn, 6)
 
 local ParryBtn = Instance.new("TextButton")
 ParryBtn.Size = UDim2.new(1, -20, 0, 28)
@@ -189,7 +177,7 @@ ParryBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ParryBtn.Font = Enum.Font.Michroma
 ParryBtn.TextSize = 14
 ParryBtn.Parent = Panel
-ApplyRadius(ParryBtn, 6)
+Round(ParryBtn, 6)
 
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Size = UDim2.new(1, -20, 0, 28)
@@ -200,19 +188,19 @@ ModeBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
 ModeBtn.Font = Enum.Font.Michroma
 ModeBtn.TextSize = 14
 ModeBtn.Parent = Panel
-ApplyRadius(ModeBtn, 6)
+Round(ModeBtn, 6)
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(1, -20, 0, 6)
 SliderTrack.Position = UDim2.new(0, 10, 0, 175)
 SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 SliderTrack.Parent = Panel
-ApplyRadius(SliderTrack, 3)
+Round(SliderTrack, 3)
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(0.01, 0, 1, 0)
 SliderFill.BackgroundColor3 = Color3.fromRGB(180, 180, 200)
 SliderFill.Parent = SliderTrack
-ApplyRadius(SliderFill, 3)
+Round(SliderFill, 3)
 
 local SliderButton = Instance.new("TextButton")
 SliderButton.Size = UDim2.new(0, 14, 0, 14)
@@ -220,7 +208,7 @@ SliderButton.Position = UDim2.new(0.01, -7, 0.5, -7)
 SliderButton.BackgroundColor3 = Color3.fromRGB(220, 220, 230)
 SliderButton.Text = ""
 SliderButton.Parent = SliderTrack
-ApplyRadius(SliderButton, 7)
+Round(SliderButton, 7)
 
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -266,9 +254,9 @@ BindBtn.MouseButton1Click:Connect(function()
     BindBtn.Text = "PRESS ANY KEY..."
 end)
 
--- IGNORE VIM INPUT
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end  -- IGNORE VIM INPUT
+-- IGNORE VIM INPUT (CRITICAL FIX)
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end  -- ignore virtual input
 
     if EngineState.IsBinding then
         if input.KeyCode ~= Enum.KeyCode.Unknown then
@@ -292,25 +280,23 @@ SliderButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+UIS.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local pos = input.Position.X
         local base = SliderTrack.AbsolutePosition.X
         local size = SliderTrack.AbsoluteSize.X
 
         local fraction = math.clamp((pos - base) / size, 0, 1)
-        local maxLimit = EngineState.LowEndMode and 200 or 2500
-        local calculated = math.floor(1 + (fraction * (maxLimit - 1)))
+        local calculated = math.floor(1 + (fraction * 2499))
 
         EngineState.TargetSpeed = calculated
         SliderFill.Size = UDim2.new(fraction, 0, 1, 0)
         SliderButton.Position = UDim2.new(fraction, -7, 0.5, -7)
-
         SpeedLabel.Text = calculated .. " KPS"
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
+UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
 
